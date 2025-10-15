@@ -114,7 +114,7 @@ public class SidebarService implements ISidebarService {
     }
 
     private SidebarService() {
-        sidebarHandler = SidebarManager.init();
+        sidebarHandler = SidebarBootstrap.init();
     }
 
     public void giveSidebar(@NotNull Player player, @Nullable IArena arena, boolean delay) {
