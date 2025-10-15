@@ -76,6 +76,7 @@ import com.andrei1058.bedwars.support.party.PAF;
 import com.andrei1058.bedwars.support.party.PAFBungeecordRedisApi;
 import com.andrei1058.bedwars.support.party.PartiesAdapter;
 import com.andrei1058.bedwars.support.preloadedparty.PrePartyListener;
+import com.andrei1058.bedwars.support.version.ServerVersionResolver;
 import com.andrei1058.bedwars.support.vault.*;
 import com.andrei1058.bedwars.support.vipfeatures.VipFeatures;
 import com.andrei1058.bedwars.support.vipfeatures.VipListeners;
@@ -122,7 +123,7 @@ public class BedWars extends JavaPlugin {
     private static Chat chat = new NoChat();
     protected static Level level;
     private static Economy economy;
-    private static final String version = Bukkit.getServer().getClass().getName().split("\\.")[3];
+    private static final String version = ServerVersionResolver.getVersionName();
     private static String lobbyWorld = "";
     private static boolean shuttingDown = false;
 
@@ -139,21 +140,14 @@ public class BedWars extends JavaPlugin {
     public void onLoad() {
 
         //Spigot support
-        try {
-            Class.forName("org.spigotmc.SpigotConfig");
-        } catch (Exception ignored) {
+        if (!ServerVersionResolver.isSpigotCompatible()) {
             this.getLogger().severe("I can't run on your server software. Please check:");
             this.getLogger().severe("https://gitlab.com/andrei1058/BedWars1058/wikis/compatibility");
             serverSoftwareSupport = false;
             return;
         }
 
-        try {
-            Class.forName("com.destroystokyo.paper.PaperConfig");
-            isPaper = true;
-        } catch (ClassNotFoundException e) {
-            isPaper = false;
-        }
+        isPaper = ServerVersionResolver.detectPaper();
 
         plugin = this;
 
@@ -162,8 +156,8 @@ public class BedWars extends JavaPlugin {
         Class supp;
 
         try {
-            supp = Class.forName("com.andrei1058.bedwars.support.version." + version + "." + version);
-        } catch (ClassNotFoundException e) {
+            supp = Class.forName(ServerVersionResolver.getSupportClassName(version));
+        } catch (ClassNotFoundException | LinkageError e) {
             serverSoftwareSupport = false;
             this.getLogger().severe("I can't run on your version: " + version);
             return;
@@ -176,7 +170,7 @@ public class BedWars extends JavaPlugin {
             //noinspection unchecked
             nms = (VersionSupport) supp.getConstructor(Class.forName("org.bukkit.plugin.Plugin"), String.class).newInstance(this, version);
         } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException |
-                 ClassNotFoundException e) {
+                 ClassNotFoundException | LinkageError e) {
             e.printStackTrace();
             serverSoftwareSupport = false;
             this.getLogger().severe("Could not load support for server version: " + version);
