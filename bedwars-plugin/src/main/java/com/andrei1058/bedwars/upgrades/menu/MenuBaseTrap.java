@@ -329,7 +329,7 @@ public class MenuBaseTrap implements MenuContent, EnemyBaseEnterTrap, TeamUpgrad
         Sound sound = null;
         if (UpgradesManager.getConfiguration().getYml().get(name + ".sound") != null) {
             try {
-                sound = Sound.valueOf(UpgradesManager.getConfiguration().getYml().getString(name + ".sound"));
+                sound = BedWars.nms.getSound(UpgradesManager.getConfiguration().getYml().getString(name + ".sound"));
             } catch (Exception ignored) {
             }
         }

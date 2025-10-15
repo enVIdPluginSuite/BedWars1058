@@ -295,7 +295,7 @@ public class Interact implements Listener {
     @EventHandler
     public void onCrafting(PrepareItemCraftEvent e) {
         if (e == null) return;
-        if (Arena.getArenaByPlayer((Player) e.getView().getPlayer()) != null) {
+        if (Arena.getArenaByPlayer((Player) BedWars.nms.getViewPlayer(e)) != null) {
             if (config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_DISABLE_CRAFTING)) {
                 e.getInventory().setResult(new ItemStack(Material.AIR));
             }

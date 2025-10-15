@@ -44,7 +44,7 @@ public class ArenaSelectorListener implements Listener {
     @EventHandler
     public void onArenaSelectorClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
-        if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof ArenaGUI.ArenaSelectorHolder)) return;
+        if (!(BedWars.nms.getTopInventory(player).getHolder() instanceof ArenaGUI.ArenaSelectorHolder)) return;
 
         event.setCancelled(true);
 

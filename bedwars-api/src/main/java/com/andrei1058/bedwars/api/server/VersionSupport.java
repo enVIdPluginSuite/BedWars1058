@@ -407,6 +407,51 @@ public abstract class VersionSupport {
     public abstract String getInventoryName(InventoryEvent e);
 
     /**
+     * Get the top inventory of the inventory currently opened by the given player.
+     * <p>
+     * {@code InventoryView} became an interface in 1.21, so code compiled against older
+     * server APIs must not call its methods directly. Newer version support modules
+     * override this and are compiled against the newer API.
+     *
+     * @return the top inventory or null when none is available.
+     */
+    public org.bukkit.inventory.Inventory getTopInventory(Player player) {
+        if (player == null) return null;
+        org.bukkit.inventory.InventoryView view = player.getOpenInventory();
+        return view == null ? null : view.getTopInventory();
+    }
+
+    /**
+     * Get the top inventory of the view related to an inventory event.
+     *
+     * @see #getTopInventory(Player)
+     */
+    public org.bukkit.inventory.Inventory getTopInventory(InventoryEvent e) {
+        return e.getView().getTopInventory();
+    }
+
+    /**
+     * Get the player (viewer) of the view related to an inventory event.
+     *
+     * @see #getTopInventory(Player)
+     */
+    public org.bukkit.entity.HumanEntity getViewPlayer(InventoryEvent e) {
+        return e.getView().getPlayer();
+    }
+
+    /**
+     * Get a sound by its enum-like name, ex: {@code ENTITY_ITEM_PICKUP}.
+     * <p>
+     * {@code Sound} stopped being an enum in 1.21.3, so calling {@code Sound.valueOf}
+     * from code compiled against older APIs is not safe.
+     *
+     * @throws IllegalArgumentException if there is no such sound.
+     */
+    public Sound getSound(String name) {
+        return Sound.valueOf(name);
+    }
+
+    /**
      * Make item unbreakable.
      */
     public abstract void setUnbreakable(ItemMeta itemMeta);

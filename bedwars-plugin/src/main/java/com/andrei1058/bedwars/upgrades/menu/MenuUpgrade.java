@@ -173,7 +173,7 @@ public class MenuUpgrade implements MenuContent, TeamUpgrade {
             }
 
             ImmutableMap<Integer, MenuContent> menuContentBySlot = UpgradesManager.getMenuForArena(Arena.getArenaByPlayer(player)).getMenuContentBySlot();
-            Inventory inv = player.getOpenInventory().getTopInventory();
+            Inventory inv = BedWars.nms.getTopInventory(player);
             for (Map.Entry<Integer, MenuContent> entry : menuContentBySlot.entrySet()) {
                 inv.setItem(entry.getKey(), entry.getValue().getDisplayItem(player, team));
             }

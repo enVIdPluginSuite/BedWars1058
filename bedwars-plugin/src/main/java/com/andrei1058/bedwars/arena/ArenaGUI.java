@@ -57,8 +57,8 @@ public class ArenaGUI {
     public static void refreshInv(Player p, IArena arena, int players) {
         if (p == null) return;
         if (p.getOpenInventory() == null) return;
-        if (!(p.getOpenInventory().getTopInventory().getHolder() instanceof ArenaSelectorHolder)) return;
-        ArenaSelectorHolder ash = ((ArenaSelectorHolder) p.getOpenInventory().getTopInventory().getHolder());
+        if (!(BedWars.nms.getTopInventory(p).getHolder() instanceof ArenaSelectorHolder)) return;
+        ArenaSelectorHolder ash = ((ArenaSelectorHolder) BedWars.nms.getTopInventory(p).getHolder());
 
         List<IArena> arenas;
         if (ash.getGroup().equalsIgnoreCase("default")) {
@@ -75,7 +75,7 @@ public class ArenaGUI {
         int arenaKey = 0;
         for (Integer slot : getUsedSlots()) {
             ItemStack i;
-            p.getOpenInventory().getTopInventory().setItem(slot, new ItemStack(Material.AIR));
+            BedWars.nms.getTopInventory(p).setItem(slot, new ItemStack(Material.AIR));
             if (arenaKey >= arenas.size()) {
                 continue;
             }
@@ -118,7 +118,7 @@ public class ArenaGUI {
             im.setLore(lore);
             i.setItemMeta(im);
             i = BedWars.nms.addCustomData(i, ArenaSelectorListener.ARENA_SELECTOR_GUI_IDENTIFIER + arenas.get(arenaKey).getArenaName());
-            p.getOpenInventory().getTopInventory().setItem(slot, i);
+            BedWars.nms.getTopInventory(p).setItem(slot, i);
             arenaKey++;
         }
         p.updateInventory();

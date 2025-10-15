@@ -140,8 +140,8 @@ public class ShopCache {
 
         public void updateItem(int slot, Player p) {
             if (p.getOpenInventory() != null) {
-                if (p.getOpenInventory().getTopInventory() != null) {
-                    p.getOpenInventory().getTopInventory().setItem(slot, cc.getItemStack(Bukkit.getPlayer(player), getShopCache(player)));
+                if (BedWars.nms.getTopInventory(p) != null) {
+                    BedWars.nms.getTopInventory(p).setItem(slot, cc.getItemStack(Bukkit.getPlayer(player), getShopCache(player)));
                 }
             }
         }

@@ -97,9 +97,9 @@ public class Sounds {
 
     private static Sound getSound(String path) {
         try {
-            return Sound.valueOf(sounds.getString(path + ".sound"));
+            return BedWars.nms.getSound(sounds.getString(path + ".sound"));
         } catch (Exception ex) {
-            return Sound.valueOf(BedWars.getForCurrentVersion("AMBIENCE_THUNDER", "ENTITY_LIGHTNING_THUNDER", "ITEM_TRIDENT_THUNDER"));
+            return BedWars.nms.getSound(BedWars.getForCurrentVersion("AMBIENCE_THUNDER", "ENTITY_LIGHTNING_THUNDER", "ITEM_TRIDENT_THUNDER"));
         }
     }
 

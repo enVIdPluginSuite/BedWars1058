@@ -119,7 +119,7 @@ public class ShopCategory {
     }
 
     public void open(Player player, ShopIndex index, ShopCache shopCache){
-        if (player.getOpenInventory().getTopInventory() == null) return;
+        if (BedWars.nms.getTopInventory(player) == null) return;
         ShopIndex.indexViewers.remove(player.getUniqueId());
 
         Inventory inv = Bukkit.createInventory(null, index.getInvSize(), Language.getMsg(player, invNamePath));

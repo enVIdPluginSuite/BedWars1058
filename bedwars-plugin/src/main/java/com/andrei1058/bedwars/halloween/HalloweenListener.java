@@ -49,8 +49,8 @@ public class HalloweenListener implements Listener {
     private final Sound ghastSound;
 
     public HalloweenListener() {
-        ambienceSound = Sound.valueOf(BedWars.getForCurrentVersion("AMBIENCE_CAVE", "AMBIENT_CAVE", "AMBIENT_CAVE"));
-        ghastSound = Sound.valueOf(BedWars.getForCurrentVersion("GHAST_SCREAM2", "ENTITY_GHAST_SCREAM", "ENTITY_GHAST_SCREAM"));
+        ambienceSound = BedWars.nms.getSound(BedWars.getForCurrentVersion("AMBIENCE_CAVE", "AMBIENT_CAVE", "AMBIENT_CAVE"));
+        ghastSound = BedWars.nms.getSound(BedWars.getForCurrentVersion("GHAST_SCREAM2", "ENTITY_GHAST_SCREAM", "ENTITY_GHAST_SCREAM"));
     }
 
     @EventHandler

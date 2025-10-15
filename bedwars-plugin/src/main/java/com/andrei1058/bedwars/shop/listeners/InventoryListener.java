@@ -186,7 +186,7 @@ public class InventoryListener implements Listener {
         //block moving with shift
         if (e.getAction() == MOVE_TO_OTHER_INVENTORY) {
             if (shouldCancelMovement(e.getCurrentItem(), sc)) {
-                if (e.getView().getTopInventory().getHolder() != null && e.getInventory().getHolder() == e.getWhoClicked())
+                if (nms.getTopInventory(e).getHolder() != null && e.getInventory().getHolder() == e.getWhoClicked())
                     return;
                 e.setCancelled(true);
             }
