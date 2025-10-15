@@ -194,6 +194,12 @@
             <artifactId>versionsupport_v1_20_R4</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- 1.21.x and 26.x -->
+        <dependency>
+            <groupId>com.andrei1058.bedwars</groupId>
+            <artifactId>versionsupport_modern</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.andrei1058.bedwars</groupId>
             <artifactId>versionsupport-common</artifactId>
