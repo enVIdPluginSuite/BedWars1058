@@ -1,4 +1,4 @@
-name: Compile snapshot with Maven
+name: Compile snapshot with Gradle
 
 on:
   push:
@@ -20,7 +20,9 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Deploy snapshot with Maven
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build snapshot with Gradle
         env:
           MVN_REPO_TOKEN: ${{ secrets.MVN_REPO_TOKEN }}
           ANDEV_RES_ID: 1
@@ -28,7 +30,5 @@ jobs:
           sudo apt install jq -y
           curl -X GET https://api.andrei1058.com/v1/resources/$ANDEV_RES_ID/versioning/current -H "Accept: application/json" >> version.json
           export UPDATE_VERSION=`jq '.version' version.json | tr -d '"'`
-          mvn versions:set -DnewVersion=$UPDATE_VERSION-SNAPSHOT
-          mvn versions:update-child-modules
-          mvn clean install -s ci_settings.xml
+          ./gradlew build -Pversion=$UPDATE_VERSION-SNAPSHOT
           echo "UPDATE_VERSION=$UPDATE_VERSION" >> $GITHUB_ENV
