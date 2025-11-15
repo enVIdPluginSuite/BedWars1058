@@ -44,9 +44,9 @@ You can start by looking through these `beginner` and `help-wanted` issues:
   
   
 #### Local development
-Before starting make sure you have `git`, `java` and `maven` installed.
+Before starting make sure you have `git`, `java` (JDK 21 or newer) installed. Gradle is provided by the wrapper.
 The plugin can be developed locally by cloning this repository, applying your
-changes and building the jar running `mvn clean install`.
+changes and building the jar running `./gradlew build` (the plugin jar ends up in `bedwars-plugin/build/libs`).
 
 
 ## Pull Requests
@@ -104,3 +104,12 @@ At this point make sure to map the following aspects on the new NMS:
 - eventually other functions that were not mapped yet by spigot
 
 For your update to go live, [SidebarLib](https://github.com/andrei1058/SidebarLib) needs to be updated to your new version as well.
+
+#### Supporting a new Minecraft version
+Every server revision has its own `versionsupport_<revision>` module that extends the previous one
+(for example `v1_21_R3 extends v1_21_R2`), so a fix made in an older module also fixes every later one.
+1. Copy the newest module (e.g. `versionsupport_v26_R1`), rename the folder, package and class, and make it extend the
+   previous revision.
+2. Register it in `settings.gradle.kts` and as a `runtimeOnly` dependency in `bedwars-plugin/build.gradle.kts`.
+3. Add one line to `REVISIONS` in `ServerVersionResolver` with the first Minecraft version it applies to.
+Servers newer than the last entry keep using the newest module.
