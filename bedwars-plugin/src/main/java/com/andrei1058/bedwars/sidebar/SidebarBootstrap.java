@@ -17,9 +17,6 @@ import java.lang.reflect.Field;
  */
 final class SidebarBootstrap {
 
-    private static final String MODERN_PROVIDER =
-            "com.andrei1058.bedwars.support.version.modern.sidebar.ModernSidebarProvider";
-
     private SidebarBootstrap() {
     }
 
@@ -41,7 +38,7 @@ final class SidebarBootstrap {
             if (manager == null) {
                 return null;
             }
-            Constructor<?> constructor = Class.forName(MODERN_PROVIDER)
+            Constructor<?> constructor = Class.forName(ServerVersionResolver.getModernSidebarProviderName())
                     .getConstructor(org.bukkit.plugin.Plugin.class);
             SidebarProvider provider = (SidebarProvider) constructor.newInstance(BedWars.plugin);
             Field field = SidebarManager.class.getDeclaredField("sidebarProvider");
