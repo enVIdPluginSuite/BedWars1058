@@ -32,28 +32,38 @@ final class ItemTags {
      * are not, so they are normalized. The same normalization is applied for reads and writes.
      */
     NamespacedKey key(@NotNull String rawKey) {
-        StringBuilder sb = new StringBuilder(rawKey.length());
-        for (char c : rawKey.toLowerCase(Locale.ROOT).toCharArray()) {
-            boolean valid = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-' || c == '/';
-            sb.append(valid ? c : '_');
+        StringBuilder normalizedKey = new StringBuilder(rawKey.length());
+        for (char character : rawKey.toLowerCase(Locale.ROOT).toCharArray()) {
+            boolean isLetter = character >= 'a' && character <= 'z';
+            boolean isDigit = character >= '0' && character <= '9';
+            boolean isAllowedSymbol = character == '.' || character == '_' || character == '-' || character == '/';
+            normalizedKey.append(isLetter || isDigit || isAllowedSymbol ? character : '_');
         }
-        return new NamespacedKey(plugin, sb.toString());
+        return new NamespacedKey(plugin, normalizedKey.toString());
+    }
+
+    /**
+     * @return the tag container of the item, or null for missing or air items (they cannot carry tags).
+     */
+    private @Nullable PersistentDataContainer containerOf(@Nullable ItemStack itemStack) {
+        if (itemStack == null || itemStack.getType().isAir()) {
+            return null;
+        }
+        ItemMeta meta = itemStack.getItemMeta();
+        return meta == null ? null : meta.getPersistentDataContainer();
     }
 
     boolean has(@Nullable ItemStack itemStack, @NotNull String rawKey) {
-        if (itemStack == null || itemStack.getType().isAir()) return false;
-        ItemMeta meta = itemStack.getItemMeta();
-        return meta != null && meta.getPersistentDataContainer().has(key(rawKey), PersistentDataType.STRING);
+        PersistentDataContainer container = containerOf(itemStack);
+        return container != null && container.has(key(rawKey), PersistentDataType.STRING);
     }
 
     /**
      * @return the stored value or null when there is none.
      */
     @Nullable String get(@Nullable ItemStack itemStack, @NotNull String rawKey) {
-        if (itemStack == null || itemStack.getType().isAir()) return null;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return null;
-        return meta.getPersistentDataContainer().get(key(rawKey), PersistentDataType.STRING);
+        PersistentDataContainer container = containerOf(itemStack);
+        return container == null ? null : container.get(key(rawKey), PersistentDataType.STRING);
     }
 
     /**
@@ -61,20 +71,18 @@ final class ItemTags {
      * (that is how the NBT based implementations behaved).
      */
     @NotNull ItemStack set(@NotNull ItemStack itemStack, @NotNull String rawKey, @NotNull String value) {
-        ItemStack copy = itemStack.clone();
-        ItemMeta meta = copy.getItemMeta();
+        ItemStack taggedCopy = itemStack.clone();
+        ItemMeta meta = taggedCopy.getItemMeta();
         if (meta == null) {
-            return copy;
+            return taggedCopy;
         }
         meta.getPersistentDataContainer().set(key(rawKey), PersistentDataType.STRING, value);
-        copy.setItemMeta(meta);
-        return copy;
+        taggedCopy.setItemMeta(meta);
+        return taggedCopy;
     }
 
     @Nullable Double getDouble(@Nullable ItemStack itemStack, @NotNull String rawKey) {
-        if (itemStack == null || itemStack.getType().isAir()) return null;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return null;
-        return meta.getPersistentDataContainer().get(key(rawKey), PersistentDataType.DOUBLE);
+        PersistentDataContainer container = containerOf(itemStack);
+        return container == null ? null : container.get(key(rawKey), PersistentDataType.DOUBLE);
     }
 }

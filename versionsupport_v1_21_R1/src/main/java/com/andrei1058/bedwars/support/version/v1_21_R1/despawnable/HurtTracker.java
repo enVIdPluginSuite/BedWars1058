@@ -21,36 +21,38 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HurtTracker implements Listener {
 
-    private final VersionSupport api;
+    private final VersionSupport versionSupport;
     private final Map<UUID, LivingEntity> lastAttacker = new ConcurrentHashMap<>();
 
-    public HurtTracker(@NotNull VersionSupport api) {
-        this.api = api;
+    public HurtTracker(@NotNull VersionSupport versionSupport) {
+        this.versionSupport = versionSupport;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDamage(EntityDamageByEntityEvent e) {
-        UUID victim = e.getEntity().getUniqueId();
-        if (!api.getDespawnablesList().containsKey(victim)) return;
+    public void onDamage(EntityDamageByEntityEvent event) {
+        UUID victimId = event.getEntity().getUniqueId();
+        boolean victimIsTeamMob = versionSupport.getDespawnablesList().containsKey(victimId);
+        if (!victimIsTeamMob) return;
 
-        Entity damager = e.getDamager();
-        if (damager instanceof Projectile projectile) {
+        Entity attacker = event.getDamager();
+        if (attacker instanceof Projectile projectile) {
+            // blame whoever shot it, not the arrow
             ProjectileSource shooter = projectile.getShooter();
-            damager = shooter instanceof Entity entity ? entity : null;
+            attacker = shooter instanceof Entity shooterEntity ? shooterEntity : null;
         }
-        if (damager instanceof LivingEntity living) {
-            lastAttacker.put(victim, living);
+        if (attacker instanceof LivingEntity livingAttacker) {
+            lastAttacker.put(victimId, livingAttacker);
         }
     }
 
     /**
      * @return the last attacker, only once.
      */
-    public @Nullable LivingEntity consume(@NotNull UUID victim) {
-        return lastAttacker.remove(victim);
+    public @Nullable LivingEntity consume(@NotNull UUID victimId) {
+        return lastAttacker.remove(victimId);
     }
 
-    public void forget(@NotNull UUID victim) {
-        lastAttacker.remove(victim);
+    public void forget(@NotNull UUID victimId) {
+        lastAttacker.remove(victimId);
     }
 }

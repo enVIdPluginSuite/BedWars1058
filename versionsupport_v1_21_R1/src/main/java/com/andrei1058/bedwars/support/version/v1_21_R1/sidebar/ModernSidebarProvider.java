@@ -31,8 +31,8 @@ public class ModernSidebarProvider extends SidebarProvider {
     public ModernSidebarProvider(Plugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(new Listener() {
             @EventHandler
-            public void onQuit(PlayerQuitEvent e) {
-                BoardRegistry.forget(e.getPlayer().getUniqueId());
+            public void onQuit(PlayerQuitEvent event) {
+                BoardRegistry.forget(event.getPlayer().getUniqueId());
             }
         }, plugin);
     }

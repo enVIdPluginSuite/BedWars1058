@@ -58,13 +58,13 @@ final class ModernTabGroup implements VersionedTabGroup {
         if (team == null) {
             team = board.registerNewTeam(teamName());
         }
-        String pre = render(prefix, receiver);
-        if (!pre.equals(team.getPrefix())) {
-            team.setPrefix(pre);
+        String renderedPrefix = render(prefix, receiver);
+        if (!renderedPrefix.equals(team.getPrefix())) {
+            team.setPrefix(renderedPrefix);
         }
-        String suf = render(suffix, receiver);
-        if (!suf.equals(team.getSuffix())) {
-            team.setSuffix(suf);
+        String renderedSuffix = render(suffix, receiver);
+        if (!renderedSuffix.equals(team.getSuffix())) {
+            team.setSuffix(renderedSuffix);
         }
         if (team.getOption(Team.Option.COLLISION_RULE) != collision()) {
             team.setOption(Team.Option.COLLISION_RULE, collision());

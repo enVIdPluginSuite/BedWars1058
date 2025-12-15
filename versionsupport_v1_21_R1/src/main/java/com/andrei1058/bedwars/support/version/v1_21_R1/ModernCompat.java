@@ -9,7 +9,9 @@ import org.bukkit.command.CommandMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * Small helpers hiding API differences between 1.21.x and 26.x, so the rest of the
@@ -45,14 +47,14 @@ public final class ModernCompat {
                 if (sound != null) {
                     return (Sound) sound;
                 }
-            } catch (java.lang.reflect.InvocationTargetException e) {
-                // fall through to the registry lookup, ex: the name is already a namespaced key
+            } catch (InvocationTargetException unknownConstantName) {
+                // not a constant name, try the registry below (ex: "entity.player.levelup")
             } catch (ReflectiveOperationException e) {
                 throw new IllegalArgumentException("Cannot resolve sound " + name, e);
             }
         }
-        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(java.util.Locale.ROOT));
-        Sound sound = key == null ? null : Registry.SOUNDS.get(key);
+        NamespacedKey registryKey = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Sound sound = registryKey == null ? null : Registry.SOUNDS.get(registryKey);
         if (sound == null) {
             throw new IllegalArgumentException("No sound named " + name);
         }
@@ -73,9 +75,10 @@ public final class ModernCompat {
 
     public static @Nullable CommandMap commandMap() {
         if (commandMap == null) {
+            // CraftServer#getCommandMap is not part of the Bukkit interface
             try {
-                Method m = Bukkit.getServer().getClass().getMethod("getCommandMap");
-                commandMap = (CommandMap) m.invoke(Bukkit.getServer());
+                Method getCommandMap = Bukkit.getServer().getClass().getMethod("getCommandMap");
+                commandMap = (CommandMap) getCommandMap.invoke(Bukkit.getServer());
             } catch (ReflectiveOperationException e) {
                 return null;
             }
@@ -83,6 +86,9 @@ public final class ModernCompat {
         return commandMap;
     }
 
+    /**
+     * The Paper mob goal API is used to replace the vanilla AI of team golems and silverfish.
+     */
     public static boolean isPaper() {
         try {
             Class.forName("com.destroystokyo.paper.entity.ai.MobGoals");
