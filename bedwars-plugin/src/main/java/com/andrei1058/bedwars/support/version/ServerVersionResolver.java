@@ -23,6 +23,8 @@ package com.andrei1058.bedwars.support.version;
 
 import org.bukkit.Bukkit;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,20 +46,19 @@ import java.util.regex.Pattern;
 public final class ServerVersionResolver {
 
     /**
-     * Revision modules for 1.21 and newer, ordered from the oldest. Each entry is
-     * {@code {firstMajor, firstMinor, firstPatch, revision}}: the revision applies from that Minecraft version
-     * up to (excluding) the next entry.
+     * Revision modules for 1.21 and newer, ordered from the oldest. Each revision applies from its first
+     * Minecraft version up to (excluding) the first version of the next entry.
      */
-    private static final Object[][] REVISIONS = new Object[][]{
-            {1, 21, 0, "v1_21_R1"},
-            {1, 21, 2, "v1_21_R2"},
-            {1, 21, 4, "v1_21_R3"},
-            {1, 21, 5, "v1_21_R4"},
-            {1, 21, 6, "v1_21_R5"},
-            {1, 21, 9, "v1_21_R6"},
-            {1, 21, 11, "v1_21_R7"},
-            {26, 0, 0, "v26_R1"},
-    };
+    private static final List<Revision> REVISIONS = Arrays.asList(
+            new Revision("v1_21_R1", 1, 21, 0),
+            new Revision("v1_21_R2", 1, 21, 2),
+            new Revision("v1_21_R3", 1, 21, 4),
+            new Revision("v1_21_R4", 1, 21, 5),
+            new Revision("v1_21_R5", 1, 21, 6),
+            new Revision("v1_21_R6", 1, 21, 9),
+            new Revision("v1_21_R7", 1, 21, 11),
+            new Revision("v26_R1", 26, 0, 0)
+    );
 
     private static final Pattern CRAFT_REVISION = Pattern.compile("^v\\d+_\\d+_R\\d+$");
     private static final Pattern MC_VERSION = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
@@ -75,25 +76,31 @@ public final class ServerVersionResolver {
      * @return {major, minor, patch}. Unknown parts are 0.
      */
     static int[] parseMinecraftVersion(String bukkitVersion) {
-        int[] result = new int[]{0, 0, 0};
+        int[] version = new int[]{0, 0, 0};
         if (bukkitVersion == null) {
-            return result;
+            return version;
         }
         Matcher matcher = MC_VERSION.matcher(bukkitVersion.trim());
         if (!matcher.find()) {
-            return result;
+            return version;
         }
-        result[0] = Integer.parseInt(matcher.group(1));
-        result[1] = Integer.parseInt(matcher.group(2));
-        if (matcher.group(3) != null) {
-            result[2] = Integer.parseInt(matcher.group(3));
+        version[0] = Integer.parseInt(matcher.group(1));
+        version[1] = Integer.parseInt(matcher.group(2));
+        boolean hasPatchNumber = matcher.group(3) != null;
+        if (hasPatchNumber) {
+            version[2] = Integer.parseInt(matcher.group(3));
         }
-        return result;
+        return version;
     }
 
+    /**
+     * On servers that relocate CraftBukkit the fourth part of the server class name is the revision
+     * (org.bukkit.craftbukkit.v1_20_R3.CraftServer). Elsewhere it is not.
+     */
     private static String readCraftSegment() {
-        String[] parts = Bukkit.getServer().getClass().getName().split("\\.");
-        return parts.length > 3 ? parts[3] : "";
+        String[] packageParts = Bukkit.getServer().getClass().getName().split("\\.");
+        boolean hasRevisionPart = packageParts.length > 3;
+        return hasRevisionPart ? packageParts[3] : "";
     }
 
     /**
@@ -103,8 +110,12 @@ public final class ServerVersionResolver {
         return isModern(MINECRAFT);
     }
 
-    static boolean isModern(int[] mc) {
-        return mc[0] >= 26 || (mc[0] == 1 && mc[1] >= 21);
+    static boolean isModern(int[] minecraftVersion) {
+        int major = minecraftVersion[0];
+        int minor = minecraftVersion[1];
+        boolean isNumberedLikeYearReleases = major >= 26;
+        boolean isOneTwentyOneOrNewer = major == 1 && minor >= 21;
+        return isNumberedLikeYearReleases || isOneTwentyOneOrNewer;
     }
 
     /**
@@ -115,41 +126,62 @@ public final class ServerVersionResolver {
         return getVersionName(MINECRAFT, CRAFT_SEGMENT);
     }
 
-    static String getVersionName(int[] mc, String craftSegment) {
-        if (CRAFT_REVISION.matcher(craftSegment).matches()) {
+    static String getVersionName(int[] minecraftVersion, String craftSegment) {
+        boolean serverReportsItsRevision = CRAFT_REVISION.matcher(craftSegment).matches();
+        if (serverReportsItsRevision) {
             return craftSegment;
         }
-        if (isModern(mc)) {
-            return revisionFor(mc);
+        if (isModern(minecraftVersion)) {
+            return revisionFor(minecraftVersion);
         }
-        StringBuilder name = new StringBuilder("v").append(mc[0]).append('_').append(mc[1]);
-        if (mc[2] > 0) {
-            name.append('_').append(mc[2]);
+        // Unsupported server without a revision, the name is only used in error messages.
+        StringBuilder name = new StringBuilder("v").append(minecraftVersion[0]).append('_').append(minecraftVersion[1]);
+        if (minecraftVersion[2] > 0) {
+            name.append('_').append(minecraftVersion[2]);
         }
         return name.toString();
     }
 
     /**
-     * @return the newest revision whose first version is not above {@code mc}.
+     * @return the newest revision whose first version is not above {@code minecraftVersion}.
      */
-    static String revisionFor(int[] mc) {
-        String found = (String) REVISIONS[0][3];
-        for (Object[] entry : REVISIONS) {
-            int[] first = new int[]{(Integer) entry[0], (Integer) entry[1], (Integer) entry[2]};
-            if (compare(mc, first) >= 0) {
-                found = (String) entry[3];
+    static String revisionFor(int[] minecraftVersion) {
+        String matchingRevision = REVISIONS.get(0).name;
+        for (Revision revision : REVISIONS) {
+            boolean serverIsAtLeastThisRevision = compareVersions(minecraftVersion, revision.firstVersion) >= 0;
+            if (serverIsAtLeastThisRevision) {
+                matchingRevision = revision.name;
             }
         }
-        return found;
+        return matchingRevision;
     }
 
-    private static int compare(int[] a, int[] b) {
-        for (int i = 0; i < 3; i++) {
-            if (a[i] != b[i]) {
-                return Integer.compare(a[i], b[i]);
+    /**
+     * Compares two {major, minor, patch} versions.
+     *
+     * @return negative if {@code left} is older, 0 if equal, positive if {@code left} is newer.
+     */
+    private static int compareVersions(int[] left, int[] right) {
+        for (int part = 0; part < 3; part++) {
+            if (left[part] != right[part]) {
+                return Integer.compare(left[part], right[part]);
             }
         }
         return 0;
+    }
+
+    /**
+     * A server revision module and the first Minecraft version it applies to.
+     */
+    private static final class Revision {
+
+        private final String name;
+        private final int[] firstVersion;
+
+        private Revision(String name, int major, int minor, int patch) {
+            this.name = name;
+            this.firstVersion = new int[]{major, minor, patch};
+        }
     }
 
     /**
@@ -172,40 +204,35 @@ public final class ServerVersionResolver {
      * Paper replaced {@code com.destroystokyo.paper.PaperConfig} in 1.19, so several markers are checked.
      */
     public static boolean detectPaper() {
-        String[] markers = new String[]{
+        return anyClassExists(
                 "com.destroystokyo.paper.PaperConfig",
                 "io.papermc.paper.configuration.Configuration",
                 "io.papermc.paper.ServerBuildInfo",
                 "io.papermc.paper.threadedregions.RegionizedServer"
-        };
-        for (String marker : markers) {
-            try {
-                Class.forName(marker);
-                return true;
-            } catch (ClassNotFoundException ignored) {
-                // try next
-            }
-        }
-        return false;
+        );
     }
 
     /**
-     * @return true when running on Spigot or on one of its forks.
+     * @return true when running on Spigot or on one of its forks (Paper is one of them).
      */
     public static boolean isSpigotCompatible() {
-        String[] markers = new String[]{
+        boolean isSpigot = anyClassExists(
                 "org.spigotmc.SpigotConfig",
                 "org.spigotmc.SpigotWorldConfig",
                 "org.bukkit.Server$Spigot"
-        };
-        for (String marker : markers) {
+        );
+        return isSpigot || detectPaper();
+    }
+
+    private static boolean anyClassExists(String... classNames) {
+        for (String className : classNames) {
             try {
-                Class.forName(marker);
+                Class.forName(className);
                 return true;
-            } catch (ClassNotFoundException ignored) {
-                // try next
+            } catch (ClassNotFoundException notPresent) {
+                // try the next marker
             }
         }
-        return detectPaper();
+        return false;
     }
 }
