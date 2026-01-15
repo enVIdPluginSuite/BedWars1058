@@ -109,7 +109,9 @@ For your update to go live, [SidebarLib](https://github.com/andrei1058/SidebarLi
 Every server revision has its own `versionsupport_<revision>` module that extends the previous one
 (for example `v1_21_R3 extends v1_21_R2`), so a fix made in an older module also fixes every later one.
 1. Copy the newest module (e.g. `versionsupport_v26_R1`), rename the folder, package and class, and make it extend the
-   previous revision.
+   previous revision. From 1.18.2 on the modules are written in Kotlin (`src/main/kotlin`) and use only the Bukkit/Paper API
+   (no NMS); the Kotlin runtime is bundled and relocated into the plugin jar. Only override what the new API does
+   differently, `v1_21_R1` is a good example. The 1.8.8 to 1.17.1 modules still use NMS.
 2. Register it in `settings.gradle.kts` and as a `runtimeOnly` dependency in `bedwars-plugin/build.gradle.kts`.
 3. Add one line to `REVISIONS` in `ServerVersionResolver` with the first Minecraft version it applies to.
 Servers newer than the last entry keep using the newest module.
