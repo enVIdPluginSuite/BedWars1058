@@ -1,6 +1,9 @@
 plugins {
+    kotlin("jvm")
     id("com.gradleup.shadow") version "8.3.5"
 }
+
+// The core is mostly Java; Kotlin is used for newer code (see src/main/kotlin).
 
 dependencies {
     // ---- bundled into the final jar (relocated where needed, see shadowJar) ----
@@ -80,6 +83,9 @@ tasks.shadowJar {
     relocate("org.slf4j", "com.andrei1058.bedwars.libs.slf4j")
     relocate("com.andrei1058.spigot.sidebar", "com.andrei1058.bedwars.libs.sidebar")
     relocate("com.andrei1058.spigot.sidebarutils", "com.andrei1058.bedwars.libs.updater")
+    // the Kotlin runtime is bundled, relocated so it can not clash with other plugins shipping their own
+    relocate("kotlin", "com.andrei1058.bedwars.libs.kotlin")
+    exclude("org/jetbrains/annotations/**", "DebugProbesKt.bin", "META-INF/*.kotlin_module", "META-INF/versions/**")
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
 
