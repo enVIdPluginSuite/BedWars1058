@@ -6,6 +6,11 @@
 // NMS modules need the Spigot server artifacts (org.spigotmc:spigot:<version>-R0.1-SNAPSHOT) from the CodeMC "nms"
 // repository, or from `mavenLocal()` after running Spigot BuildTools with `--remapped` where needed.
 
+plugins {
+    // Kotlin is applied by the modules that contain Kotlin code (bedwars-plugin and the 1.21+/26.x version support).
+    kotlin("jvm") version "2.0.21" apply false
+}
+
 allprojects {
     group = "com.andrei1058.bedwars"
     version = providers.gradleProperty("version").get()
@@ -78,4 +83,18 @@ subprojects {
     }
 
     tasks.withType<Javadoc>().configureEach { enabled = false }
+
+    // Modules with Kotlin code compile it for the same Java release as their Java code.
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        afterEvaluate {
+            val release = project.extra["javaRelease"] as Int
+            extensions.configure<JavaPluginExtension> {
+                sourceCompatibility = JavaVersion.toVersion(release)
+                targetCompatibility = JavaVersion.toVersion(release)
+            }
+            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+                compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(release.toString()))
+            }
+        }
+    }
 }
