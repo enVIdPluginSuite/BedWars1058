@@ -1,3 +1,7 @@
+plugins {
+    kotlin("jvm")
+}
+
 extra["javaRelease"] = 21
 
 dependencies {
