@@ -52,6 +52,7 @@ object ServerVersionResolver {
      * Minecraft version up to (excluding) the first version of the next entry.
      */
     private val revisions = listOf(
+        Revision("v1_20_R4", 1, 20, 5),
         Revision("v1_21_R1", 1, 21, 0),
         Revision("v1_21_R2", 1, 21, 2),
         Revision("v1_21_R3", 1, 21, 4),
@@ -107,8 +108,9 @@ object ServerVersionResolver {
         val major = minecraftVersion[0]
         val minor = minecraftVersion[1]
         val isNumberedLikeYearReleases = major >= 26
-        val isOneTwentyOneOrNewer = major == 1 && minor >= 21
-        return isNumberedLikeYearReleases || isOneTwentyOneOrNewer
+        val patch = minecraftVersion[2]
+        val isOneTwentyDotFiveOrNewer = major == 1 && (minor >= 21 || (minor == 20 && patch >= 5))
+        return isNumberedLikeYearReleases || isOneTwentyDotFiveOrNewer
     }
 
     /**
