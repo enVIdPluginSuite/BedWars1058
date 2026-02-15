@@ -63,7 +63,6 @@ public class SidebarManager {
     }
 
     public SidebarManager() throws InstantiationException {
-        instance = this;
         // PAPI hook
         try {
             Class.forName("me.clip.placeholderapi.PlaceholderAPI");
@@ -83,6 +82,8 @@ public class SidebarManager {
             throw new InstantiationException();
         }
 
+        // only register once a provider was found, a failed attempt must not leave a half built singleton behind
+        instance = this;
     }
 
     /**
