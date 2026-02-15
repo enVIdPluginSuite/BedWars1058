@@ -77,6 +77,10 @@ subprojects {
     if (name.startsWith("sidebar-")) {
         group = "com.andrei1058.spigot.sidebar"
         version = sidebarLibraryVersion
+        apply(plugin = "maven-publish")
+        extensions.configure<PublishingExtension> {
+            publications.create<MavenPublication>("maven") { from(components["java"]) }
+        }
     }
 
     // modules override this in their own build script
