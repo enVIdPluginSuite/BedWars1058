@@ -33,6 +33,11 @@ allprojects {
             content { includeGroup("net.citizensnpcs"); includeGroup("org.bstats") }
         }
         maven("https://repo.papermc.io/repository/maven-public/")
+        // The repository moved from andrei1058.com to andrei1058.dev. Only the VIP features API still comes from there,
+        // the sidebar library is built from source (see SidebarLib/).
+        maven("https://repo.andrei1058.dev/releases/") {
+            content { includeGroupByRegex("com\\.andrei1058.*") }
+        }
         maven("https://repo.andrei1058.com/releases/") {
             content { includeGroupByRegex("com\\.andrei1058.*") }
         }
@@ -63,8 +68,16 @@ allprojects {
     }
 }
 
+// The sidebar library keeps its own coordinates, so addons can use it from `publishToMavenLocal` like before.
+val sidebarLibraryVersion = "25.2.2-SNAPSHOT"
+
 subprojects {
     apply(plugin = "java-library")
+
+    if (name.startsWith("sidebar-")) {
+        group = "com.andrei1058.spigot.sidebar"
+        version = sidebarLibraryVersion
+    }
 
     // modules override this in their own build script
     extra["javaRelease"] = 11
