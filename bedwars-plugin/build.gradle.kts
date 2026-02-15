@@ -70,6 +70,14 @@ dependencies {
     }
 }
 
+// The final jar bundles every version support module, including the ones built for Java 17 and 21, while the core
+// itself targets Java 11. Without this Gradle refuses to put them on the runtime classpath of the core.
+configurations.runtimeClasspath {
+    attributes {
+        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+    }
+}
+
 tasks.processResources {
     include("plugin.yml")
     filesMatching("plugin.yml") {
