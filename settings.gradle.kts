@@ -35,3 +35,15 @@ include(
     "versionsupport_v1_21_R7",
     "versionsupport_v26_R1"
 )
+
+// The sidebar library is built from source (SidebarLib/), it is not downloaded.
+val sidebarModules = listOf(
+    "sidebar-base", "sidebar-cmn1",
+    "sidebar-v1_8_R3", "sidebar-v1_12_R1", "sidebar-v1_16_R3", "sidebar-v1_17_R1", "sidebar-v1_18_R2",
+    "sidebar-v1_19_R2", "sidebar-v1_19_R3", "sidebar-v1_20_R1", "sidebar-v1_20_R2", "sidebar-v1_20_R3",
+    "sidebar-v1_20_R4", "sidebar-v1_21_R1", "sidebar-v1_21_R2", "sidebar-v1_21_R3"
+)
+for (module in sidebarModules) {
+    include(module)
+    project(":$module").projectDir = file("SidebarLib/$module")
+}
