@@ -41,12 +41,14 @@ dependencies {
     runtimeOnly(project(":resetadapter_slimepaper"))
     runtimeOnly(project(":resetadapter_aswm"))
 
-    // sidebar library, one provider per supported server revision
-    implementation("com.andrei1058.spigot.sidebar:sidebar-base:24.2")
-    for (v in listOf("v1_8_R3", "v1_12_R1", "v1_16_R3", "v1_17_R1", "v1_18_R2", "v1_19_R2", "v1_19_R3", "v1_20_R1", "v1_20_R2", "v1_20_R3")) {
-        runtimeOnly("com.andrei1058.spigot.sidebar:sidebar-$v:24.2")
+    // sidebar library (built from SidebarLib/), one provider per supported server revision
+    implementation(project(":sidebar-base"))
+    for (revision in listOf(
+        "v1_8_R3", "v1_12_R1", "v1_16_R3", "v1_17_R1", "v1_18_R2", "v1_19_R2", "v1_19_R3",
+        "v1_20_R1", "v1_20_R2", "v1_20_R3", "v1_20_R4", "v1_21_R1", "v1_21_R2", "v1_21_R3"
+    )) {
+        runtimeOnly(project(":sidebar-$revision"))
     }
-    runtimeOnly("com.andrei1058.spigot.sidebar:sidebar-v1_20_R4:23.12")
 
     // ---- provided by the server or by other plugins ----
     compileOnly("org.spigotmc:spigot:1.8.8-R0.1-SNAPSHOT")
@@ -83,6 +85,7 @@ tasks.shadowJar {
     relocate("org.slf4j", "com.andrei1058.bedwars.libs.slf4j")
     relocate("com.andrei1058.spigot.sidebar", "com.andrei1058.bedwars.libs.sidebar")
     relocate("com.andrei1058.spigot.sidebarutils", "com.andrei1058.bedwars.libs.updater")
+    relocate("dev.andrei1058.spigot.sidebar", "com.andrei1058.bedwars.libs.sidebar.cmn1")
     // the Kotlin runtime is bundled, relocated so it can not clash with other plugins shipping their own
     relocate("kotlin", "com.andrei1058.bedwars.libs.kotlin")
     exclude("org/jetbrains/annotations/**", "DebugProbesKt.bin", "META-INF/*.kotlin_module", "META-INF/versions/**")

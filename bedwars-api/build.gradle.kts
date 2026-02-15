@@ -10,7 +10,7 @@ dependencies {
     compileOnly("org.spigotmc:spigot:1.16.5-R0.1-SNAPSHOT")
 
     // exposed to dependants because the sidebar types are part of the API
-    api("com.andrei1058.spigot.sidebar:sidebar-base:23.2")
+    api(project(":sidebar-base"))
 }
 
 java {
