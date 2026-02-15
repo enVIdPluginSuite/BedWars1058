@@ -10,8 +10,8 @@ import org.bukkit.plugin.Plugin
  * Creates the sidebar library manager.
  *
  * The library picks its provider from the relocated CraftBukkit package, which no longer exists on
- * 1.20.5+ / 26.x. When that lookup fails on a modern server, the library manager (already registered as
- * the singleton by its constructor) gets the API-only provider injected instead.
+ * 1.20.5+ / 26.x. When that lookup fails on a modern server, the manager is created with the
+ * API-only provider instead.
  */
 object SidebarBootstrap {
 
@@ -31,24 +31,14 @@ object SidebarBootstrap {
         if (!ServerVersionResolver.isModern()) {
             return null
         }
-        return installModernProvider()
+        return createModernManager()
     }
 
-    /**
-     * The library constructor registers the manager before it fails to find a provider, so the
-     * manager can be fetched and its provider field filled in afterwards.
-     */
-    private fun installModernProvider(): SidebarManager? {
+    private fun createModernManager(): SidebarManager? {
         return try {
-            val manager = SidebarManager.getInstance() ?: return null
-
             val providerClass = Class.forName(ServerVersionResolver.getModernSidebarProviderName())
             val provider = providerClass.getConstructor(Plugin::class.java).newInstance(BedWars.plugin) as SidebarProvider
-
-            val providerField = SidebarManager::class.java.getDeclaredField("sidebarProvider")
-            providerField.isAccessible = true
-            providerField.set(manager, provider)
-            manager
+            SidebarManager.init(provider)
         } catch (failure: Throwable) {
             BedWars.plugin.logger.warning("Could not initialize the modern sidebar provider: $failure")
             null
