@@ -36,7 +36,7 @@ open class ModernSidebarProvider(plugin: Plugin) : SidebarProvider() {
 
     override fun createSidebar(
         title: SidebarLine, lines: Collection<SidebarLine>, placeholders: Collection<PlaceholderProvider>
-    ): Sidebar = WrappedSidebar(title, lines, placeholders)
+    ): Sidebar = ModernSidebar(title, lines, placeholders)
 
     override fun createObjective(
         sidebar: WrappedSidebar, name: String, health: Boolean, title: SidebarLine, type: Int
