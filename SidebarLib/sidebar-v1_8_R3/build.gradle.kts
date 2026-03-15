@@ -1,5 +1,5 @@
 // Sidebar provider using the server internals of one Minecraft version.
-extra["javaRelease"] = 8
+extra["javaRelease"] = 11
 
 dependencies {
     compileOnly(project(":sidebar-base"))
