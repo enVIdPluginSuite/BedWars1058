@@ -72,9 +72,13 @@ dependencies {
 
 // The final jar bundles every version support module, including the ones built for Java 17 and 21, while the core
 // itself targets Java 11. Without this Gradle refuses to put them on the runtime classpath of the core.
-configurations.runtimeClasspath {
-    attributes {
-        attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+// The version modules are built for newer Java releases than this module (1.21+ needs 21), so every classpath
+// that pulls them in must be allowed to resolve Java 21 libraries. This includes the test classpaths.
+listOf("runtimeClasspath", "testRuntimeClasspath", "testCompileClasspath").forEach { classpathName ->
+    configurations.named(classpathName) {
+        attributes {
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+        }
     }
 }
 
