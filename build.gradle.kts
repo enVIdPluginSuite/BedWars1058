@@ -62,9 +62,6 @@ allprojects {
         maven("https://repo.infernalsuite.com/repository/maven-snapshots/") {
             content { includeGroup("com.infernalsuite.aswm") }
         }
-        maven("https://repo.fusesource.com/nexus/content/repositories/releases-3rd-party/") {
-            content { includeGroup("com.google.common") }
-        }
     }
 }
 
