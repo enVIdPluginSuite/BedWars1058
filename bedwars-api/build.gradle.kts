@@ -4,7 +4,8 @@ plugins {
 
 dependencies {
     // Maven: provided
-    compileOnly("com.google.common:google-collect:1.0")
+    // Guava from Maven Central replaces the ancient google-collect 1.0 (same com.google.common classes)
+    compileOnly("com.google.guava:guava:21.0")
     compileOnly("org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT")
     // Maven declared this with compile scope; it is only needed to compile, so it is not exposed to consumers.
     compileOnly("org.spigotmc:spigot:1.16.5-R0.1-SNAPSHOT")
