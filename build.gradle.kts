@@ -16,7 +16,14 @@ allprojects {
     version = providers.gradleProperty("version").get()
 
     repositories {
-        mavenLocal()
+        // Only the groups that really are installed locally (Spigot BuildTools output, the sidebar library, this
+        // project's own artifacts). A half downloaded file left in ~/.m2 for any other group can no longer break the build.
+        mavenLocal {
+            content {
+                includeGroup("org.spigotmc")
+                includeGroupByRegex("com\\.andrei1058.*")
+            }
+        }
         mavenCentral()
         // Repositories that only serve their own groups are filtered, so a slow or down repository can not
         // break the resolution of unrelated dependencies.
