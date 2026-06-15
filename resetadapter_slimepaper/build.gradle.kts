@@ -1,4 +1,4 @@
-extra["javaRelease"] = 11
+extra["javaRelease"] = 17
 
 dependencies {
     compileOnly(project(":bedwars-api"))
