@@ -61,7 +61,7 @@ allprojects {
             content { includeGroup("com.alessiodp.parties") }
         }
         maven("https://repo.glaremasters.me/repository/concuncan/") {
-            content { includeGroup("com.grinderwolf") }
+            content { includeGroup("com.grinderwolf"); includeGroup("com.flowpowered") }
         }
         maven("https://repo.rapture.pw/repository/maven-snapshots/") {
             content { includeGroup("com.grinderwolf") }
