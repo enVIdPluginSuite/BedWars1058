@@ -37,7 +37,11 @@ allprojects {
             content { includeGroup("org.spigotmc") }
         }
         maven("https://repo.codemc.io/repository/maven-public/") {
-            content { includeGroup("net.citizensnpcs"); includeGroup("org.bstats") }
+            content {
+                includeGroup("net.citizensnpcs"); includeGroup("org.bstats")
+                // VaultAPI and the bungeecord-chat snapshot used by the 1.18 API are only served here.
+                includeGroup("net.milkbowl.vault"); includeGroup("net.md-5")
+            }
         }
         maven("https://repo.papermc.io/repository/maven-public/")
         // The repository moved from andrei1058.com to andrei1058.dev. Only the VIP features API still comes from there,
