@@ -77,13 +77,17 @@ public class BwSidebar implements ISidebar {
 
     public void setContent(List<String> titleArray, List<String> lineArray, @Nullable IArena arena) {
         this.arena = arena;
-        SidebarLine title = this.normalizeTitle(titleArray);
-        List<SidebarLine> lines = this.normalizeLines(lineArray);
 
-        if (null == arena) {
-            // clean up
+        // Top statistics are bound to the arena they were created for. A sidebar outlives arenas (it is reused when
+        // the player joins another one), so a leftover from a previous, possibly already destroyed, arena must be
+        // dropped before the lines are parsed with it.
+        boolean statisticsFromAnotherArena = null != topStatistics && topStatistics.getArena() != arena;
+        if (null == arena || statisticsFromAnotherArena) {
             setTopStatistics(null);
         }
+
+        SidebarLine title = this.normalizeTitle(titleArray);
+        List<SidebarLine> lines = this.normalizeLines(lineArray);
 
         ConcurrentLinkedQueue<PlaceholderProvider> placeholders = this.getPlaceholders(this.getPlayer());
         placeholders.addAll(this.persistentProviders);
