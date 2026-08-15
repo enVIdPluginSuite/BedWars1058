@@ -1815,6 +1815,10 @@ public class Arena implements IArena {
      */
     @Override
     public ITeam getTeam(Player p) {
+        if (null == getTeams()) {
+            // arena data already destroyed
+            return null;
+        }
         for (ITeam t : getTeams()) {
             if (t.isMember(p)) {
                 return t;
@@ -1829,6 +1833,10 @@ public class Arena implements IArena {
      */
     @Override
     public ITeam getExTeam(UUID p) {
+        if (null == getTeams()) {
+            // arena data already destroyed
+            return null;
+        }
         for (ITeam t : getTeams()) {
             if (t.wasMember(p)) {
                 return t;
