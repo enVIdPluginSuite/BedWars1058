@@ -40,6 +40,13 @@ public class StatisticsOrdered {
         return new StringParser();
     }
 
+    /**
+     * @return the arena these statistics were created for.
+     */
+    public IArena getArena() {
+        return arena;
+    }
+
     public class StringParser {
         private int index = 0;
 
