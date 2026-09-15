@@ -63,6 +63,7 @@ import com.andrei1058.bedwars.lobbysocket.LoadedUsersCleaner;
 import com.andrei1058.bedwars.lobbysocket.SendTask;
 import com.andrei1058.bedwars.maprestore.internal.InternalAdapter;
 import com.andrei1058.bedwars.metrics.MetricsManager;
+import com.andrei1058.bedwars.teamselector.TeamSelectorModule;
 import com.andrei1058.bedwars.money.internal.MoneyListeners;
 import com.andrei1058.bedwars.shop.ShopManager;
 import com.andrei1058.bedwars.sidebar.*;
@@ -391,6 +392,9 @@ public class BedWars extends JavaPlugin {
 
         /* Save messages for stats gui items if custom items added, for each language */
         Language.setupCustomStatsMessages();
+
+        /* Team selector (used to be a separate addon) */
+        TeamSelectorModule.enable();
 
         /* PlaceholderAPI Support */
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
