@@ -58,7 +58,7 @@ import com.andrei1058.bedwars.arena.tasks.GameRestartingTask;
 import com.andrei1058.bedwars.arena.tasks.GameStartingTask;
 import com.andrei1058.bedwars.arena.tasks.ReJoinTask;
 import com.andrei1058.bedwars.arena.team.BedWarsTeam;
-import com.andrei1058.bedwars.arena.team.TeamAssigner;
+import com.andrei1058.bedwars.teamselector.teamselector.TeamSelectorAssigner;
 import com.andrei1058.bedwars.configuration.ArenaConfig;
 import com.andrei1058.bedwars.configuration.Sounds;
 import com.andrei1058.bedwars.levels.internal.InternalLevel;
@@ -175,7 +175,7 @@ public class Arena implements IArena {
     private Location respawnLocation, spectatorLocation, waitingLocation;
     private int yKillHeight;
     private Instant startTime;
-    private ITeamAssigner teamAssigner = new TeamAssigner();
+    private ITeamAssigner teamAssigner = new TeamSelectorAssigner();
 
     private boolean allowMapBreak = false;
     private @Nullable ITeam winner;
@@ -2650,7 +2650,7 @@ public class Arena implements IArena {
     @Override
     public void setTeamAssigner(ITeamAssigner teamAssigner) {
         if (teamAssigner == null) {
-            this.teamAssigner = new TeamAssigner();
+            this.teamAssigner = new TeamSelectorAssigner();
             plugin.getLogger().info("Using Default team assigner on arena: " + this.getArenaName());
         } else {
             this.teamAssigner = teamAssigner;
