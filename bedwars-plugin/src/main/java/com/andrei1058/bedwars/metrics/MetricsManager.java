@@ -4,6 +4,7 @@ import com.andrei1058.bedwars.BedWars;
 import com.andrei1058.bedwars.api.language.Language;
 import com.andrei1058.bedwars.support.citizens.JoinNPC;
 import org.bstats.bukkit.Metrics;
+import com.andrei1058.bedwars.teamselector.configuration.Config;
 import org.bstats.charts.SimplePie;
 
 import java.util.concurrent.Callable;
@@ -27,6 +28,11 @@ public class MetricsManager {
         metrics.addCustomChart(new SimplePie("db_adapter", () -> BedWars.getRemoteDatabase().getClass().getName()));
         metrics.addCustomChart(new SimplePie("map_adapter", () -> BedWars.getAPI().getRestoreAdapter().getClass().getName()));
         metrics.addCustomChart(new SimplePie("citizens_support", () -> String.valueOf(JoinNPC.isCitizensSupport())));
+
+        // team selector
+        metrics.addCustomChart(new SimplePie("selector_slot", () -> Config.isLoaded() ? String.valueOf(Config.config.getInt(Config.SELECTOR_SLOT)) : "disabled"));
+        metrics.addCustomChart(new SimplePie("allot_team_change", () -> Config.isLoaded() ? String.valueOf(Config.config.getBoolean(Config.ALLOW_TEAM_CHANGE)) : "disabled"));
+        metrics.addCustomChart(new SimplePie("balance_teams", () -> Config.isLoaded() ? String.valueOf(Config.config.getBoolean(Config.BALANCE_TEAMS)) : "disabled"));
     }
 
     public Metrics getMetrics() {
