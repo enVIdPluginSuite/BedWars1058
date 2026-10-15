@@ -65,8 +65,15 @@ public class ArenaGUI {
             arenas = new ArrayList<>(Arena.getArenas());
         } else {
             arenas = new ArrayList<>();
+            // several groups can be combined with a plus, like in /bw join
+            String[] groups = ash.getGroup().split("\\+");
             for (IArena a : Arena.getArenas()) {
-                if (a.getGroup().equalsIgnoreCase(ash.getGroup())) arenas.add(a);
+                for (String group : groups) {
+                    if (a.getGroup().equalsIgnoreCase(group)) {
+                        arenas.add(a);
+                        break;
+                    }
+                }
             }
         }
 
