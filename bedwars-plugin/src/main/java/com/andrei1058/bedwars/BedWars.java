@@ -63,6 +63,7 @@ import com.andrei1058.bedwars.lobbysocket.LoadedUsersCleaner;
 import com.andrei1058.bedwars.lobbysocket.SendTask;
 import com.andrei1058.bedwars.maprestore.internal.InternalAdapter;
 import com.andrei1058.bedwars.metrics.MetricsManager;
+import com.andrei1058.bedwars.playmenu.PlayMenuModule;
 import com.andrei1058.bedwars.teamselector.TeamSelectorModule;
 import com.andrei1058.bedwars.money.internal.MoneyListeners;
 import com.andrei1058.bedwars.shop.ShopManager;
@@ -395,6 +396,9 @@ public class BedWars extends JavaPlugin {
 
         /* Team selector (used to be a separate addon) */
         TeamSelectorModule.enable();
+
+        /* Play menu (/bw play) */
+        PlayMenuModule.enable();
 
         /* PlaceholderAPI Support */
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
