@@ -20,6 +20,7 @@
 
 package com.andrei1058.bedwars.commands.bedwars;
 
+import com.andrei1058.bedwars.playmenu.CmdPlay;
 import com.andrei1058.bedwars.BedWars;
 import com.andrei1058.bedwars.api.command.ParentCommand;
 import com.andrei1058.bedwars.api.command.SubCommand;
@@ -70,6 +71,7 @@ public class MainCommand extends BukkitCommand implements ParentCommand {
         new CmdTeleporter(this, "teleporter");
         if (getServerType() != ServerType.BUNGEE) {
             new CmdGUI(this, "gui");
+            new CmdPlay(this, "play");
         }
         new CmdStats(this, "stats");
         new CmdStart(this, "forceStart");
