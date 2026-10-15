@@ -43,11 +43,18 @@ public class RejoinCommand extends BukkitCommand {
             return true;
         }
 
-        Player p = (Player) s;
+        attemptRejoin((Player) s);
+        return true;
+    }
 
+    /**
+     * Send a player back to the game he left, if he can.
+     * Shared by the /rejoin command and the reconnect button of the play menu.
+     */
+    public static void attemptRejoin(Player p) {
         if (!p.hasPermission(Permissions.PERMISSION_REJOIN)) {
             p.sendMessage(Language.getMsg(p, Messages.COMMAND_NOT_FOUND_OR_INSUFF_PERMS));
-            return true;
+            return;
         }
 
         ReJoin rj = ReJoin.getPlayer(p);
@@ -55,18 +62,17 @@ public class RejoinCommand extends BukkitCommand {
         if (rj == null) {
             p.sendMessage(Language.getMsg(p, Messages.REJOIN_NO_ARENA));
             Sounds.playSound("rejoin-denied", p);
-            return true;
+            return;
         }
 
         if (!rj.canReJoin()) {
             p.sendMessage(Language.getMsg(p, Messages.REJOIN_DENIED));
             Sounds.playSound("rejoin-denied", p);
-            return true;
+            return;
         }
 
         p.sendMessage(Language.getMsg(p, Messages.REJOIN_ALLOWED).replace("{arena}", rj.getArena().getDisplayName()));
         Sounds.playSound("rejoin-allowed", p);
         rj.reJoin(p);
-        return true;
     }
 }
