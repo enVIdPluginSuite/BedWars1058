@@ -8,7 +8,7 @@
 
 plugins {
     // Kotlin is applied by the modules that contain Kotlin code (bedwars-plugin and the 1.21+/26.x version support).
-    kotlin("jvm") version "2.0.21" apply false
+    kotlin("jvm") version "2.2.21" apply false
 }
 
 allprojects {
@@ -44,11 +44,8 @@ allprojects {
             }
         }
         maven("https://repo.papermc.io/repository/maven-public/")
-        // The repository moved from andrei1058.com to andrei1058.dev. Only the VIP features API still comes from there,
-        // the sidebar library is built from source (see SidebarLib/).
-        maven("https://repo.andrei1058.dev/releases/") {
-            content { includeGroupByRegex("com\\.andrei1058.*") }
-        }
+        // repo.andrei1058.dev is no longer controlled by the project (it redirects to an unrelated site over HTTP), so it
+        // is not used. The VIP features API comes from mavenLocal, the sidebar library is built from source (SidebarLib/).
         maven("https://repo.andrei1058.com/releases/") {
             content { includeGroupByRegex("com\\.andrei1058.*") }
         }
@@ -98,8 +95,8 @@ subprojects {
         "compileOnly"("net.md-5:bungeecord-chat:1.8-SNAPSHOT")
         "compileOnly"("commons-io:commons-io:2.13.0")
         "compileOnly"("org.jetbrains:annotations:24.0.1")
-        "compileOnly"("org.projectlombok:lombok:1.18.36")
-        "annotationProcessor"("org.projectlombok:lombok:1.18.36")
+        "compileOnly"("org.projectlombok:lombok:1.18.44")
+        "annotationProcessor"("org.projectlombok:lombok:1.18.44")
     }
 
     tasks.withType<JavaCompile>().configureEach {

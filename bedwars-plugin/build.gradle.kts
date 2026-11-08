@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm")
-    id("com.gradleup.shadow") version "8.3.5"
+    id("com.gradleup.shadow") version "9.2.2"
 }
 
 // The core is mostly Java; Kotlin is used for newer code (see src/main/kotlin).
