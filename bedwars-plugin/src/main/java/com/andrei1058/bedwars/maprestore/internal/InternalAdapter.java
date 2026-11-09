@@ -66,7 +66,9 @@ public class InternalAdapter extends RestoreAdapter {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 File bf = new File(backupFolder, a.getArenaName() + ".zip"), af = new File(Bukkit.getWorldContainer(), a.getArenaName());
                 // an extra game of an arena runs in its own copy of the map
-                boolean instance = !a.getWorldName().equals(a.getArenaName());
+                // (on 26.1+ every game is: Paper only reads worlds from the main level folder, see WorldLayout)
+                boolean instance = WorldLayout.isModernServer() || !a.getWorldName().equals(a.getArenaName());
+                File runtimeDir = WorldLayout.worldDir(a.getWorldName());
                 boolean hadBackup;
                 synchronized (ZIP_LOCK) {
                     hadBackup = bf.exists();
@@ -77,18 +79,18 @@ public class InternalAdapter extends RestoreAdapter {
 
                 if (bf.exists() && (hadBackup || instance)) {
                     if (instance) {
-                        FileUtil.delete(new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                        FileUtil.delete(runtimeDir);
                     } else {
                         FileUtil.delete(af);
                     }
                     try {
-                        ZipFileUtil.unzipFileIntoDirectory(bf, new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                        ZipFileUtil.unzipFileIntoDirectory(bf, runtimeDir);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
 
-                WorldLayout.normalize(new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                WorldLayout.normalize(runtimeDir);
                 deleteWorldTrash(a.getWorldName());
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -131,8 +133,8 @@ public class InternalAdapter extends RestoreAdapter {
                     Bukkit.getScheduler().runTaskLater(plugin, () -> new Arena(a.getArenaName(), null), 80L);
                 }
             }
-            if (!a.getWorldName().equals(a.getArenaName())) {
-                deleteWorld(a.getWorldName());
+            if (WorldLayout.isModernServer() || !a.getWorldName().equals(a.getArenaName())) {
+                deleteRuntime(a.getWorldName());
             }
         });
     }
@@ -141,9 +143,9 @@ public class InternalAdapter extends RestoreAdapter {
     public void onDisable(IArena a) {
         if(BedWars.isShuttingDown()) {
             Bukkit.unloadWorld(a.getWorldName(), false);
-            if (!a.getWorldName().equals(a.getArenaName())) {
+            if (WorldLayout.isModernServer() || !a.getWorldName().equals(a.getArenaName())) {
                 try {
-                    FileUtils.deleteDirectory(new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                    FileUtils.deleteDirectory(WorldLayout.worldDir(a.getWorldName()));
                 } catch (IOException ignored) {
                 }
             }
@@ -151,8 +153,8 @@ public class InternalAdapter extends RestoreAdapter {
         }
         Bukkit.getScheduler().runTask(getOwner(), () -> {
             Bukkit.unloadWorld(a.getWorldName(), false);
-            if (!a.getWorldName().equals(a.getArenaName())) {
-                deleteWorld(a.getWorldName());
+            if (WorldLayout.isModernServer() || !a.getWorldName().equals(a.getArenaName())) {
+                deleteRuntime(a.getWorldName());
             }
         });
     }
@@ -169,13 +171,25 @@ public class InternalAdapter extends RestoreAdapter {
                     e.printStackTrace();
                 }
             }
-            WorldLayout.normalize(af);
+            if (WorldLayout.isModernServer()) {
+                // Paper 26.1+ only reads worlds from the main level folder: play the map from there
+                File dir = WorldLayout.worldDir(s.getWorldName());
+                FileUtil.delete(dir);
+                if (new File(af, "region").isDirectory()) {
+                    try {
+                        FileUtils.copyDirectory(af, dir);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                WorldLayout.normalize(dir);
+            }
             WorldCreator wc = new WorldCreator(s.getWorldName());
             wc.generator(new VoidChunkGenerator());
             wc.generateStructures(false);
             Bukkit.getScheduler().runTask(getOwner(), () -> {
                 try {
-                    File level = new File(Bukkit.getWorldContainer(), s.getWorldName() + "/region");
+                    File level = new File(WorldLayout.worldDir(s.getWorldName()), "region");
                     if (level.exists()) {
                         s.getPlayer().sendMessage(ChatColor.GREEN + "Loading " + s.getWorldName() + " from Bukkit worlds container.");
                         deleteWorldTrash(s.getWorldName());
@@ -208,13 +222,35 @@ public class InternalAdapter extends RestoreAdapter {
         Bukkit.getScheduler().runTask(getOwner(), () -> {
             Bukkit.getWorld(s.getWorldName()).save();
             Bukkit.unloadWorld(s.getWorldName(), true);
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> new WorldZipper(s.getWorldName(), true));
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    WorldLayout.exportToRoot(s.getWorldName());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                new WorldZipper(s.getWorldName(), true);
+                if (WorldLayout.isModernServer()) {
+                    FileUtil.delete(WorldLayout.worldDir(s.getWorldName()));
+                }
+            });
         });
     }
 
     @Override
     public boolean isWorld(String name) {
-        return new File(Bukkit.getWorldContainer(), name + "/region").exists();
+        return new File(Bukkit.getWorldContainer(), name + "/region").exists()
+                || new File(Bukkit.getWorldContainer(), name + "/dimensions/minecraft/overworld/region").exists();
+    }
+
+    /** Deletes the loaded copy of a world (the map in the server root is not touched on 26.1+). */
+    private void deleteRuntime(String name) {
+        Bukkit.getScheduler().runTaskAsynchronously(getOwner(), () -> {
+            try {
+                FileUtils.deleteDirectory(WorldLayout.worldDir(name));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -222,6 +258,7 @@ public class InternalAdapter extends RestoreAdapter {
         Bukkit.getScheduler().runTaskAsynchronously(getOwner(), () -> {
             try {
                 FileUtils.deleteDirectory(new File(Bukkit.getWorldContainer(), name));
+                if (WorldLayout.isModernServer()) FileUtils.deleteDirectory(WorldLayout.worldDir(name));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -325,11 +362,9 @@ public class InternalAdapter extends RestoreAdapter {
     }
 
     private void deleteWorldTrash(String world) {
-        for (File f : new File[]{new File(Bukkit.getWorldContainer(), world + "/level.dat"),
-                new File(Bukkit.getWorldContainer(), world + "/level.dat_mcr"),
-                new File(Bukkit.getWorldContainer(), world + "/level.dat_old"),
-                new File(Bukkit.getWorldContainer(), world + "/session.lock"),
-                new File(Bukkit.getWorldContainer(), world + "/uid.dat")}) {
+        File dir = WorldLayout.worldDir(world);
+        for (File f : new File[]{new File(dir, "level.dat"), new File(dir, "level.dat_mcr"), new File(dir, "level.dat_old"),
+                new File(dir, "session.lock"), new File(dir, "uid.dat")}) {
             if (f.exists()) {
                 if (!f.delete()) {
                     getOwner().getLogger().warning("Could not delete: " + f.getPath());

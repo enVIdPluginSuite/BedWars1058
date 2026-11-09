@@ -78,12 +78,9 @@ import com.andrei1058.bedwars.support.party.PAF;
 import com.andrei1058.bedwars.support.party.PAFBungeecordRedisApi;
 import com.andrei1058.bedwars.support.party.PartiesAdapter;
 import com.andrei1058.bedwars.support.preloadedparty.PrePartyListener;
+import com.andrei1058.bedwars.support.vipfeatures.VipHook;
 import com.andrei1058.bedwars.support.version.ServerVersionResolver;
 import com.andrei1058.bedwars.support.vault.*;
-import com.andrei1058.bedwars.support.vipfeatures.VipFeatures;
-import com.andrei1058.bedwars.support.vipfeatures.VipListeners;
-import com.andrei1058.vipfeatures.api.IVipFeatures;
-import com.andrei1058.vipfeatures.api.MiniGameAlreadyRegistered;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -485,11 +482,10 @@ public class BedWars extends JavaPlugin {
 
         if (Bukkit.getPluginManager().getPlugin("VipFeatures") != null) {
             try {
-                IVipFeatures vf = Bukkit.getServicesManager().getRegistration(IVipFeatures.class).getProvider();
-                vf.registerMiniGame(new VipFeatures(this));
-                registerEvents(new VipListeners(vf));
+                // kept in its own class: the VipFeatures API classes only exist when that plugin is installed
+                VipHook.register(this);
                 out.log(java.util.logging.Level.INFO, "Hook into VipFeatures support.");
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 out.warning("Could not load support for VipFeatures.");
             }
         }
