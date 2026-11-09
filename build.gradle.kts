@@ -44,11 +44,8 @@ allprojects {
             }
         }
         maven("https://repo.papermc.io/repository/maven-public/")
-        // repo.andrei1058.dev is no longer controlled by the project (it redirects to an unrelated site over HTTP), so it
-        // is not used. The VIP features API comes from mavenLocal, the sidebar library is built from source (SidebarLib/).
-        maven("https://repo.andrei1058.com/releases/") {
-            content { includeGroupByRegex("com\\.andrei1058.*") }
-        }
+        // repo.andrei1058.dev / .com are no longer used: the domain redirects to an unrelated site. The sidebar library
+        // is built from source (SidebarLib/) and the VipFeatures API is stubbed (vipfeatures-stub).
         maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") {
             content { includeGroup("me.clip") }
         }
@@ -95,13 +92,15 @@ subprojects {
         "compileOnly"("net.md-5:bungeecord-chat:1.8-SNAPSHOT")
         "compileOnly"("commons-io:commons-io:2.13.0")
         "compileOnly"("org.jetbrains:annotations:24.0.1")
-        "compileOnly"("org.projectlombok:lombok:1.18.44")
-        "annotationProcessor"("org.projectlombok:lombok:1.18.44")
+        "compileOnly"("org.projectlombok:lombok:1.18.48")
+        "annotationProcessor"("org.projectlombok:lombok:1.18.48")
     }
 
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.release.set(provider { project.extra["javaRelease"] as Int })
+        // plain StringBuilder concatenation instead of invokedynamic: shadow's relocator (ASM) chokes on indy concat
+        options.compilerArgs.add("-XDstringConcat=inline")
     }
 
     tasks.withType<Javadoc>().configureEach { enabled = false }
@@ -116,6 +115,7 @@ subprojects {
             }
             tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
                 compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(release.toString()))
+                compilerOptions.freeCompilerArgs.add("-Xstring-concat=inline")
             }
         }
     }

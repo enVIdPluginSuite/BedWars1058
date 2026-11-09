@@ -491,8 +491,6 @@ public class BedWars extends JavaPlugin {
                 out.log(java.util.logging.Level.INFO, "Hook into VipFeatures support.");
             } catch (Exception e) {
                 out.warning("Could not load support for VipFeatures.");
-            } catch (MiniGameAlreadyRegistered miniGameAlreadyRegistered) {
-                miniGameAlreadyRegistered.printStackTrace();
             }
         }
 

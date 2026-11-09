@@ -55,8 +55,8 @@ public class VipListeners implements Listener {
 
     @EventHandler
     public void onBockChange(BlockChangeEvent e) {
-        if (BedWars.getAPI().getArenaUtil().getArenaByName(e.getLocation().getWorld().getName()) != null) {
-            IArena a = BedWars.getAPI().getArenaUtil().getArenaByName(e.getLocation().getWorld().getName());
+        IArena a = BedWars.getAPI().getArenaUtil().getArenaByIdentifier(e.getLocation().getWorld().getName());
+        if (a != null) {
             for (ITeam t : a.getTeams()) {
                 for (int x = -1; x < 2; x++) {
                     for (int z = -1; z < 2; z++) {

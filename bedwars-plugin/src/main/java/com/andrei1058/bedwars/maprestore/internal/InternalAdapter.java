@@ -88,6 +88,7 @@ public class InternalAdapter extends RestoreAdapter {
                     }
                 }
 
+                WorldLayout.normalize(new File(Bukkit.getWorldContainer(), a.getWorldName()));
                 deleteWorldTrash(a.getWorldName());
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -168,6 +169,7 @@ public class InternalAdapter extends RestoreAdapter {
                     e.printStackTrace();
                 }
             }
+            WorldLayout.normalize(af);
             WorldCreator wc = new WorldCreator(s.getWorldName());
             wc.generator(new VoidChunkGenerator());
             wc.generateStructures(false);

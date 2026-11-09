@@ -11,6 +11,7 @@ pluginManagement {
 include(
     "bedwars-api",
     "bedwars-plugin",
+    "vipfeatures-stub",
     "resetadapter_aswm",
     "resetadapter_slime",
     "resetadapter_slimepaper",

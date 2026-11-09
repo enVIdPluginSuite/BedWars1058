@@ -2472,9 +2472,11 @@ public class Arena implements IArena {
      */
     public static void removeFromEnableQueue(IArena a) {
         enableQueue.remove(a);
-        if (!enableQueue.isEmpty()) {
-            BedWars.getAPI().getRestoreAdapter().onEnable(enableQueue.get(0));
-            plugin.getLogger().info("Loading arena: " + enableQueue.get(0).getWorldName());
+        // the adapter may load the world synchronously, which re-enters this method and empties the queue
+        IArena next = enableQueue.isEmpty() ? null : enableQueue.get(0);
+        if (next != null) {
+            plugin.getLogger().info("Loading arena: " + next.getWorldName());
+            BedWars.getAPI().getRestoreAdapter().onEnable(next);
         }
     }
 
