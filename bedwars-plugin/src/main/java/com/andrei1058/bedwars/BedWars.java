@@ -276,6 +276,7 @@ public class BedWars extends JavaPlugin {
         if (config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_HEAL_POOL_ENABLE)) {
             registerEvents(new HealPoolListner());
         }
+        registerEvents(new com.andrei1058.bedwars.listeners.VoidGuardListener());
 
         if (getServerType() == ServerType.BUNGEE) {
             if (autoscale) {

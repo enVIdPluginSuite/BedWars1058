@@ -240,7 +240,7 @@ public class SetupSession implements ISetupSession {
                 .filter(e -> e.getType() != EntityType.PLAYER).filter(e -> e.getType() != EntityType.PAINTING)
                 .filter(e -> e.getType() != EntityType.ITEM_FRAME).forEach(Entity::remove), 30L);
         w.setAutoSave(false);
-        w.setGameRuleValue("doMobSpawning", "false");
+        com.andrei1058.bedwars.support.GameRuleCompat.set(w, "doMobSpawning", "false");
         Bukkit.getPluginManager().callEvent(new SetupSessionStartEvent(this));
         setStarted(true);
 

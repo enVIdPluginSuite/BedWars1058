@@ -1,7 +1,6 @@
 package com.andrei1058.bedwars.support.version.v1_21_R1.sidebar
 
 import com.andrei1058.spigot.sidebar.ScoreLine
-import com.andrei1058.spigot.sidebar.ScoredLine
 import com.andrei1058.spigot.sidebar.SidebarLine
 import com.andrei1058.spigot.sidebar.WrappedSidebar
 import org.bukkit.entity.Player
@@ -102,7 +101,8 @@ internal class ModernScoreLine(
         }
 
         if (paper) {
-            val rightText = (sidebarLine as? ScoredLine)?.score ?: ""
+            // the score column holds placeholders too (for example {TeamYellowStatus}): resolve them like the left text
+            val rightText = sidebarLine.getTrimReplacePlaceholdersScore(player, null, sidebar.placeholders)
             val previousRightText = sentRightText.put(player.uniqueId, rightText)
             if (rightText != previousRightText) {
                 PaperNumbers.apply(row, rightText)
