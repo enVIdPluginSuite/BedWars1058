@@ -277,6 +277,7 @@ public class BedWars extends JavaPlugin {
             registerEvents(new HealPoolListner());
         }
         registerEvents(new com.andrei1058.bedwars.listeners.VoidGuardListener());
+        registerEvents(new com.andrei1058.bedwars.listeners.SpongeListener(), new com.andrei1058.bedwars.listeners.WorldEditGuard());
 
         if (getServerType() == ServerType.BUNGEE) {
             if (autoscale) {

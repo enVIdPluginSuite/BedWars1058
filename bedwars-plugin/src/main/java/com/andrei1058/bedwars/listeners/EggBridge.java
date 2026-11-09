@@ -31,6 +31,7 @@ import org.bukkit.entity.Egg;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerEggThrowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 
@@ -61,8 +62,7 @@ public class EggBridge implements Listener {
                     if (arena.isPlayer(shooter)) {
                         EggBridgeThrowEvent throwEvent = new EggBridgeThrowEvent(shooter, arena);
                         Bukkit.getPluginManager().callEvent(throwEvent);
-                        if (event.isCancelled()) {
-                            event.setCancelled(true);
+                        if (throwEvent.isCancelled()) {
                             return;
                         }
                         bridges.put(projectile, new EggBridgeTask(shooter, projectile, arena.getTeam(shooter).getColor()));
@@ -75,7 +75,19 @@ public class EggBridge implements Listener {
     @EventHandler
     public void onHit(ProjectileHitEvent e) {
         if (e.getEntity() instanceof Egg) {
-            removeEgg((Egg) e.getEntity());
+            // the egg is about to vanish; the bridge goes on along its path, through blocks
+            EggBridgeTask task = bridges.get((Egg) e.getEntity());
+            if (task != null) {
+                task.onProjectileHit();
+            }
+        }
+    }
+
+    /** A bridge egg must not hatch a chicken where it lands. */
+    @EventHandler
+    public void onEggHatch(PlayerEggThrowEvent e) {
+        if (bridges.containsKey(e.getEgg())) {
+            e.setHatching(false);
         }
     }
 

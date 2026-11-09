@@ -31,21 +31,38 @@ import com.andrei1058.bedwars.listeners.EggBridge;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import static com.andrei1058.bedwars.BedWars.nms;
 
 @SuppressWarnings("WeakerAccess")
 public class EggBridgeTask implements Runnable {
 
+    /** Longest horizontal distance from the thrower the bridge may reach. */
+    private static final double MAX_DISTANCE = 30.0D;
+    /** The bridge ends after this many ticks. */
+    private static final int MAX_TICKS = 100;
+    /** Blocks are placed at least this close along the path, so a fast egg leaves no gaps. */
+    private static final double STEP = 0.5D;
+
     private Egg projectile;
     private TeamColor teamColor;
     private Player player;
     private IArena arena;
     private BukkitTask task;
+
+    /** Where the egg was on the previous tick. */
+    private Vector last;
+    /** Once the egg hit something it is simulated by hand, so that it flies on through blocks. */
+    private boolean virtual = false;
+    private Vector virtualVelocity;
+    private int ticks = 0;
+    private boolean finished = false;
 
     public EggBridgeTask(Player player, Egg projectile, TeamColor teamColor) {
         IArena a = Arena.getArenaByPlayer(player);
@@ -54,6 +71,7 @@ public class EggBridgeTask implements Runnable {
         this.projectile = projectile;
         this.teamColor = teamColor;
         this.player = player;
+        this.last = projectile.getLocation().toVector();
         task = Bukkit.getScheduler().runTaskTimer(BedWars.plugin, this, 0, 1);
     }
 
@@ -73,60 +91,102 @@ public class EggBridgeTask implements Runnable {
         return arena;
     }
 
+    /**
+     * The egg hit a block or an entity (and is about to disappear): carry on along its path as if nothing was in
+     * the way.
+     */
+    public void onProjectileHit() {
+        if (virtual || finished) return;
+        virtual = true;
+        virtualVelocity = projectile.getVelocity().clone();
+    }
+
     @Override
     public void run() {
-
-        Location loc = getProjectile().getLocation();
-
-        if (getProjectile().isDead()
-                || !arena.isPlayer(getPlayer())
-                || getPlayer().getLocation().distance(getProjectile().getLocation()) > 27
-                || getPlayer().getLocation().getY() - getProjectile().getLocation().getY() > 9) {
-            EggBridge.removeEgg(projectile);
+        if (finished) return;
+        if (!arena.isPlayer(getPlayer()) || ++ticks > MAX_TICKS) {
+            finish();
             return;
         }
 
-        if (getPlayer().getLocation().distance(loc) > 4.0D) {
-
-            Block b2 = loc.clone().subtract(0.0D, 2.0D, 0.0D).getBlock();
-            if (!Misc.isBuildProtected(b2.getLocation(), getArena())) {
-                if (b2.getType() == Material.AIR) {
-                    b2.setType(nms.woolMaterial());
-                    nms.setBlockTeamColor(b2, getTeamColor());
-                    getArena().addPlacedBlock(b2);
-                    Bukkit.getPluginManager().callEvent(new EggBridgeBuildEvent(getTeamColor(), getArena(), b2));
-                    loc.getWorld().playEffect(b2.getLocation(), nms.eggBridge(), 3);
-                    Sounds.playSound("egg-bridge-block", getPlayer());
+        World world = getPlayer().getWorld();
+        Vector now;
+        if (virtual) {
+            // same physics as a thrown egg: move, then drag and gravity
+            now = last.clone().add(virtualVelocity);
+            virtualVelocity.multiply(0.99D).setY(virtualVelocity.getY() - 0.03D);
+        } else {
+            if (getProjectile().isDead()) {
+                // gone without a hit event (removed by something else): follow the last known motion
+                onProjectileHit();
+                if (virtualVelocity.lengthSquared() < 0.0001D) {
+                    finish();
+                    return;
                 }
+                return;
             }
+            now = getProjectile().getLocation().toVector();
+        }
 
-            Block b3 = loc.clone().subtract(1.0D, 2.0D, 0.0D).getBlock();
-            if (!Misc.isBuildProtected(b3.getLocation(), getArena())) {
-                if (b3.getType() == Material.AIR) {
-                    b3.setType(nms.woolMaterial());
-                    nms.setBlockTeamColor(b3, getTeamColor());
-                    getArena().addPlacedBlock(b3);
-                    Bukkit.getPluginManager().callEvent(new EggBridgeBuildEvent(getTeamColor(), getArena(), b3));
-                    loc.getWorld().playEffect(b3.getLocation(), nms.eggBridge(), 3);
-                    Sounds.playSound("egg-bridge-block", getPlayer());
-                }
-            }
+        Location playerLoc = getPlayer().getLocation();
+        double dx = now.getX() - playerLoc.getX();
+        double dz = now.getZ() - playerLoc.getZ();
+        if (Math.sqrt(dx * dx + dz * dz) > MAX_DISTANCE || now.getY() < getMinHeight(world)) {
+            finish();
+            return;
+        }
 
-            Block b4 = loc.clone().subtract(0.0D, 2.0D, 1.0D).getBlock();
-            if (!Misc.isBuildProtected(b4.getLocation(), getArena())) {
-                if (b4.getType() == Material.AIR) {
-                    b4.setType(nms.woolMaterial());
-                    nms.setBlockTeamColor(b4, getTeamColor());
-                    getArena().addPlacedBlock(b4);
-                    Bukkit.getPluginManager().callEvent(new EggBridgeBuildEvent(getTeamColor(), getArena(), b4));
-                    loc.getWorld().playEffect(b4.getLocation(), nms.eggBridge(), 3);
-                    Sounds.playSound("egg-bridge-block", getPlayer());
-                }
-            }
+        // walk the segment last -> now so that a fast egg does not skip blocks
+        Vector delta = now.clone().subtract(last);
+        double length = delta.length();
+        int steps = Math.max(1, (int) Math.ceil(length / STEP));
+        for (int i = 1; i <= steps; i++) {
+            Vector point = last.clone().add(delta.clone().multiply((double) i / steps));
+            Location at = new Location(world, point.getX(), point.getY(), point.getZ());
+            // keep a few blocks free around the thrower, the bridge starts in front of them
+            double px = at.getX() - playerLoc.getX();
+            double py = at.getY() - playerLoc.getY();
+            double pz = at.getZ() - playerLoc.getZ();
+            if (px * px + py * py + pz * pz <= 16.0D) continue;
+            placeAround(at);
+        }
+        last = now;
+    }
+
+    private static int getMinHeight(World world) {
+        try {
+            return (Integer) World.class.getMethod("getMinHeight").invoke(world);
+        } catch (Throwable ignored) {
+            return 0;
         }
     }
 
-    public void cancel(){
-        task.cancel();
+    private void placeAround(Location loc) {
+        place(loc.clone().subtract(0.0D, 2.0D, 0.0D).getBlock());
+        place(loc.clone().subtract(1.0D, 2.0D, 0.0D).getBlock());
+        place(loc.clone().subtract(0.0D, 2.0D, 1.0D).getBlock());
+    }
+
+    /** Places one bridge block if the spot is free and not protected; otherwise it is skipped and the bridge goes on. */
+    private void place(Block b) {
+        if (b.getType() != Material.AIR) return;
+        if (Misc.isBuildProtected(b.getLocation(), getArena())) return;
+        b.setType(nms.woolMaterial());
+        nms.setBlockTeamColor(b, getTeamColor());
+        getArena().addPlacedBlock(b);
+        Bukkit.getPluginManager().callEvent(new EggBridgeBuildEvent(getTeamColor(), getArena(), b));
+        b.getWorld().playEffect(b.getLocation(), nms.eggBridge(), 3);
+        Sounds.playSound("egg-bridge-block", getPlayer());
+    }
+
+    private void finish() {
+        finished = true;
+        EggBridge.removeEgg(projectile);
+        cancel();
+    }
+
+    public void cancel() {
+        finished = true;
+        if (task != null) task.cancel();
     }
 }

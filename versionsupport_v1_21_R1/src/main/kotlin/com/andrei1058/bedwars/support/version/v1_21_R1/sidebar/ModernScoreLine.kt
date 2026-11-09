@@ -33,8 +33,15 @@ internal class ModernScoreLine(
     /** The invisible scoreboard entry this row is attached to. */
     private fun entryName(): String = lineColor + "§r"
 
+    /**
+     * The row text. A line can also carry text for the score column (the team status: tick, cross, "YOU"); that column
+     * is drawn at the far right edge of the sidebar, so the text is appended right behind the left text instead, which
+     * keeps it next to the team name.
+     */
     private fun render(player: Player): String {
-        return sidebarLine.getTrimReplacePlaceholders(player, null, sidebar.placeholders) ?: ""
+        val left = sidebarLine.getTrimReplacePlaceholders(player, null, sidebar.placeholders) ?: ""
+        val right = sidebarLine.getTrimReplacePlaceholdersScore(player, null, sidebar.placeholders)
+        return left + right
     }
 
     private fun objectiveOf(player: Player): Objective? {
@@ -100,13 +107,9 @@ internal class ModernScoreLine(
             row.score = scoreAmount
         }
 
-        if (paper) {
-            // the score column holds placeholders too (for example {TeamYellowStatus}): resolve them like the left text
-            val rightText = sidebarLine.getTrimReplacePlaceholdersScore(player, null, sidebar.placeholders)
-            val previousRightText = sentRightText.put(player.uniqueId, rightText)
-            if (rightText != previousRightText) {
-                PaperNumbers.apply(row, rightText)
-            }
+        // the score digits stay hidden (blank number format, Paper only): the status is part of the text, see render
+        if (paper && sentRightText.put(player.uniqueId, "") == null) {
+            PaperNumbers.apply(row, "")
         }
     }
 
