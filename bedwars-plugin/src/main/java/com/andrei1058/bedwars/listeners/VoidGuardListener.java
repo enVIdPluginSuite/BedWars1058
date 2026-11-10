@@ -4,7 +4,6 @@ import com.andrei1058.bedwars.BedWars;
 import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.arena.Arena;
 import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -82,15 +81,14 @@ public class VoidGuardListener implements Listener {
 
     private void clear(World world, Chunk chunk) {
         if (!chunk.isLoaded()) return;
-        ChunkSnapshot snap = chunk.getChunkSnapshot();
         int bottom = minHeight(world);
         int top = world.getMaxHeight();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = bottom; y < top; y++) {
-                    Material m = snap.getBlockType(x, y, z);
-                    if (m != Material.AIR) {
-                        chunk.getBlock(x, y, z).setType(Material.AIR, false);
+                    org.bukkit.block.Block block = chunk.getBlock(x, y, z);
+                    if (block.getType() != Material.AIR) {
+                        block.setType(Material.AIR, false);
                     }
                 }
             }
