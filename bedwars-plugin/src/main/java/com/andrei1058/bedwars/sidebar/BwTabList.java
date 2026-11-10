@@ -490,6 +490,8 @@ public class BwTabList {
         replacements.put("{teamName}", displayName);
         replacements.put("{teamLetter}", null == team ? "" : team.getColor().chat() + (displayName.substring(0, 1)));
         replacements.put("{teamColor}", null == team ? "" : team.getColor().chat().toString());
+        // upper-case tag such as [RED], for tab list prefixes
+        replacements.put("{teamTag}", null == team ? "" : "[" + displayName.toUpperCase() + "]");
 
         return replacements;
     }

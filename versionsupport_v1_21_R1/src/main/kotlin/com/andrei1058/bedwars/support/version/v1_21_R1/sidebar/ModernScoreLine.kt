@@ -99,7 +99,11 @@ internal class ModernScoreLine(
         val text = render(player)
         val previousText = sentText.put(player.uniqueId, text)
         if (text != previousText) {
-            team.prefix = text
+            // clients before 1.13 (reached through ViaVersion, e.g. Lunar 1.8.9) allow 16 characters per prefix and
+            // suffix and cut the rest off, so long rows are split over both; newer clients show them as one text
+            val (prefix, suffix) = splitRow(text)
+            team.prefix = prefix
+            team.suffix = suffix
         }
 
         val row = objective.getScore(entryName())
@@ -153,5 +157,58 @@ internal class ModernScoreLine(
     override fun compareTo(other: ScoreLine): Int {
         // ascending: the library gives a new line the score of the first one (the lowest) and then shifts the others up
         return scoreAmount.compareTo(other.scoreAmount)
+    }
+
+    companion object {
+        private const val HALF = 16
+
+        /**
+         * Splits [text] into a team prefix of at most [HALF] characters and the rest as suffix, without cutting a
+         * colour code in two. The suffix starts with the colours and formats that are active at the cut, because the
+         * invisible scoreboard entry between the two resets them.
+         */
+        internal fun splitRow(text: String): Pair<String, String> {
+            if (text.length <= HALF) return text to ""
+            var cut = HALF
+            if (text[cut - 1] == '§') cut-- // do not separate a code from its character
+            val hex = text.lastIndexOf("§x", cut - 1)
+            if (hex >= 0 && cut < hex + 14) cut = hex // a hex colour is 14 characters long
+            if (cut <= 0) return text to ""
+            val prefix = text.substring(0, cut)
+            return prefix to activeCodes(prefix) + text.substring(cut)
+        }
+
+        /** The colour and formats still in effect at the end of [text]. */
+        private fun activeCodes(text: String): String {
+            var color = ""
+            val formats = StringBuilder()
+            var i = 0
+            while (i < text.length - 1) {
+                if (text[i] != '§') {
+                    i++
+                    continue
+                }
+                val c = text[i + 1].lowercaseChar()
+                when {
+                    c == 'x' && i + 14 <= text.length -> {
+                        color = text.substring(i, i + 14)
+                        formats.setLength(0)
+                        i += 14
+                        continue
+                    }
+                    c == 'r' -> {
+                        color = ""
+                        formats.setLength(0)
+                    }
+                    c in '0'..'9' || c in 'a'..'f' -> {
+                        color = "§$c"
+                        formats.setLength(0) // a colour code resets the formats
+                    }
+                    c in 'k'..'o' -> formats.append('§').append(c)
+                }
+                i += 2
+            }
+            return color + formats
+        }
     }
 }
