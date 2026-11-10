@@ -104,6 +104,9 @@ public class MainConfig extends ConfigManager {
         yml.addDefault("sponge.despawn-seconds", 3);
         yml.addDefault("world-edit.block-in-game", true);
         yml.addDefault("void-guard.clear-outside-border", true);
+        // team marker in the tab list (Hypixel style): {teamLetter} = coloured first letter (R), {teamTag} = [RED], {teamName} = Red
+        yml.addDefault("scoreboard-settings.tab-list.team-tag", "{teamLetter} ");
+        yml.addDefault("scoreboard-settings.date-format", "MM/dd/yyyy");
         yml.addDefault(ConfigPath.GENERAL_CONFIGURATION_GAME_END_COUNTDOWN, 120);
         yml.addDefault(ConfigPath.GENERAL_CONFIGURATION_SHOUT_COOLDOWN, 30);
         yml.addDefault(ConfigPath.GENERAL_CONFIG_PLACEHOLDERS_REPLACEMENTS_SERVER_IP, "yourServer.Com");

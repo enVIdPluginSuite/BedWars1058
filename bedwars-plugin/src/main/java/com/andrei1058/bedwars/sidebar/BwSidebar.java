@@ -55,7 +55,16 @@ public class BwSidebar implements ISidebar {
         this.player = player;
         nextEventDateFormat = new SimpleDateFormat(getMsg(player, Messages.FORMATTING_SCOREBOARD_NEXEVENT_TIMER));
         nextEventDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        dateFormat = new SimpleDateFormat(getMsg(player, Messages.FORMATTING_SCOREBOARD_DATE));
+        // one date format for every language (config.yml, scoreboard-settings.date-format); empty = language file
+        String configuredDate = config.getYml().getString("scoreboard-settings.date-format", "MM/dd/yyyy");
+        SimpleDateFormat chosenDate;
+        try {
+            chosenDate = new SimpleDateFormat(configuredDate == null || configuredDate.isEmpty()
+                    ? getMsg(player, Messages.FORMATTING_SCOREBOARD_DATE) : configuredDate);
+        } catch (IllegalArgumentException invalid) {
+            chosenDate = new SimpleDateFormat(getMsg(player, Messages.FORMATTING_SCOREBOARD_DATE));
+        }
+        dateFormat = chosenDate;
         this.tabList = new BwTabList(this);
 
         // Persistent placeholders
