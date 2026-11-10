@@ -5,6 +5,7 @@ import com.andrei1058.spigot.sidebar.PlayerTab
 import com.andrei1058.spigot.sidebar.SidebarLine
 import com.andrei1058.spigot.sidebar.VersionedTabGroup
 import com.andrei1058.spigot.sidebar.WrappedSidebar
+import org.bukkit.ChatColor
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.Team
 import java.util.concurrent.CopyOnWriteArrayList
@@ -44,6 +45,17 @@ internal class ModernTabGroup(
         val renderedPrefix = render(prefix, receiver)
         if (renderedPrefix != team.prefix) {
             team.prefix = renderedPrefix
+        }
+        // the last colour code of the prefix colours the player's name in the tab list (team colour)
+        val nameColor = COLOR_CODE.findAll(renderedPrefix).lastOrNull()?.groupValues?.get(1)?.let { ChatColor.getByChar(it[0]) }
+        if (nameColor != null) {
+            try {
+                if (team.color != nameColor) {
+                    team.color = nameColor
+                }
+            } catch (ignored: Throwable) {
+                // not supported on this server
+            }
         }
         val renderedSuffix = render(suffix, receiver)
         if (renderedSuffix != team.suffix) {
@@ -164,5 +176,6 @@ internal class ModernTabGroup(
 
     private companion object {
         const val MAX_TEAM_NAME_LENGTH = 16
+        val COLOR_CODE = Regex("§([0-9a-fA-F])")
     }
 }

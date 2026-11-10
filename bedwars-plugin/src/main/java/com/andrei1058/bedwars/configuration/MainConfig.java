@@ -76,6 +76,14 @@ public class MainConfig extends ConfigManager {
         yml.addDefault(ConfigPath.SB_CONFIG_SIDEBAR_HEALTH_IN_TAB, true);
         yml.addDefault(ConfigPath.SB_CONFIG_SIDEBAR_HEALTH_REFRESH, 300);
         yml.addDefault(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_ENABLE, true);
+        yml.addDefault("scoreboard-settings.tab-header-footer.header", java.util.Arrays.asList(
+                "&bYou are playing on &e&l{serverIp}",
+                "&7{date}  &8{player}",
+                ""));
+        yml.addDefault("scoreboard-settings.tab-header-footer.footer", java.util.Arrays.asList(
+                "",
+                "{tabStatus}",
+                "&aBedwars, Survival & MORE!"));
         yml.addDefault(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_REFRESH_INTERVAL, 10);
 
         yml.addDefault(ConfigPath.GENERAL_CONFIGURATION_REJOIN_TIME, 60 * 5);

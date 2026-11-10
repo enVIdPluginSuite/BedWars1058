@@ -360,6 +360,7 @@ public class BwTabList {
         // the in-game tab prefix of alive players always shows the team, even if the language file does not mention it
         final boolean ensureTeamTag = null != replacements && path.equals(Messages.FORMATTING_SB_TAB_PLAYING_PREFIX)
                 && strings.stream().noneMatch(l -> l.contains("{team"));
+        final boolean teamPrefix = null != replacements && path.equals(Messages.FORMATTING_SB_TAB_PLAYING_PREFIX);
         if (ensureTeamTag && strings.isEmpty()) {
             strings = List.of("");
         }
@@ -376,7 +377,14 @@ public class BwTabList {
         strings = new ArrayList<>();
         for (String string : Language.getList(sidebar.getPlayer(), path)) {
             if (ensureTeamTag) {
-                string = "{teamColor}{teamTag} " + string;
+                // [RANK] [TEAM] name: the team tag goes right after the rank when the prefix has one
+                string = string.contains("{vPrefix}")
+                        ? string.replace("{vPrefix}", "{vPrefix}{teamColor}{teamTag} ")
+                        : "{teamColor}{teamTag} " + string;
+            }
+            if (teamPrefix && !string.endsWith("{teamColor}")) {
+                // the last colour code of the prefix is the colour of the player's name in the tab list
+                string = string + "{teamColor}";
             }
             String parsed = string.replace("{vPrefix}", BedWars.getChatSupport().getPrefix(targetPlayer))
                     .replace("{vSuffix}", BedWars.getChatSupport().getSuffix(targetPlayer));

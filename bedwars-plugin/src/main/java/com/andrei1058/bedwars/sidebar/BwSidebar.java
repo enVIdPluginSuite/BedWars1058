@@ -281,6 +281,8 @@ public class BwSidebar implements ISidebar {
             providers.add(new PlaceholderProvider("{on}", () ->
                     String.valueOf(Bukkit.getOnlinePlayers().size()))
             );
+            providers.add(new PlaceholderProvider("{tabStatus}", () ->
+                    "&fOnline: &a" + Bukkit.getOnlinePlayers().size()));
             PlayerStats persistentStats = BedWars.getStatsManager().get(player.getUniqueId());
             //noinspection ConstantConditions
             if (null != persistentStats) {
@@ -313,6 +315,7 @@ public class BwSidebar implements ISidebar {
             providers.add(new PlaceholderProvider("{on}", () -> String.valueOf(arena.getPlayers().size())));
             providers.add(new PlaceholderProvider("{max}", () -> String.valueOf(arena.getMaxPlayers())));
             providers.add(new PlaceholderProvider("{nextEvent}", this::getNextEventName));
+            providers.add(new PlaceholderProvider("{tabStatus}", this::buildTabStatus));
 
             if (arena.isSpectator(player)) {
                 Language lang = getPlayerLanguage(player);
@@ -477,6 +480,44 @@ public class BwSidebar implements ISidebar {
         return null == arena;
     }
 
+    /** One compact status line for the tab footer, in the style of the rest of the tab list. */
+    private String buildTabStatus() {
+        if (null == arena) {
+            return "";
+        }
+        String map = "&a" + arena.getDisplayName();
+        String out;
+        if (arena.isSpectator(player)) {
+            out = "&7Spectating &8| " + map;
+        } else {
+            switch (arena.getStatus()) {
+                case waiting:
+                    out = "&fWaiting for players &8| &a" + arena.getPlayers().size() + "&7/&a" + arena.getMaxPlayers();
+                    break;
+                case starting:
+                    String left = arena.getStartingTask() == null ? "" : String.valueOf(arena.getStartingTask().getCountdown() + 1);
+                    out = "&fStarting in &a" + left + "s &8| &a" + arena.getPlayers().size() + "&7/&a" + arena.getMaxPlayers();
+                    break;
+                case playing:
+                    ITeam team = arena.getTeam(player);
+                    String teamPart = null == team ? "" : " &8| " + team.getColor().chat() + team.getDisplayName(getPlayerLanguage(player)) + " Team";
+                    out = map + teamPart + " &8| &f" + getNextEventName() + " &a" + getNextEventTime();
+                    break;
+                default:
+                    out = "&cGame over";
+            }
+        }
+        return org.bukkit.ChatColor.translateAlternateColorCodes('&', out);
+    }
+
+    private static List<String> translateColors(List<String> lines) {
+        List<String> out = new ArrayList<>(lines.size());
+        for (String l : lines) {
+            out.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', l));
+        }
+        return out;
+    }
+
     // Provide header and footer for current game state
     private void assignTabHeaderFooter() {
         if (!config.getBoolean(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_ENABLE)) {
@@ -561,9 +602,18 @@ public class BwSidebar implements ISidebar {
 
         }
 
+        // one compact header/footer for every game state (config.yml, scoreboard-settings.tab-header-footer.header/footer);
+        // empty lists fall back to the per-state texts of the language file
+        List<String> header = translateColors(config.getYml().getStringList(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_ENABLE.replace(".enable", ".header")));
+        List<String> footer = translateColors(config.getYml().getStringList(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_ENABLE.replace(".enable", ".footer")));
+        if (header.isEmpty() && footer.isEmpty()) {
+            header = lang.l(headerPath);
+            footer = lang.l(footerPath);
+        }
+
         this.headerFooter = new TabHeaderFooter(
-                this.normalizeLines(lang.l(headerPath)),
-                this.normalizeLines(lang.l(footerPath)),
+                this.normalizeLines(header),
+                this.normalizeLines(footer),
                 getPlaceholders(this.getPlayer())
         );
 
