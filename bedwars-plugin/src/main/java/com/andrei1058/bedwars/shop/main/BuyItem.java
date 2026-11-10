@@ -175,8 +175,23 @@ public class BuyItem implements IBuyItem {
      * Give to a player
      */
     public void give(Player player, IArena arena) {
+        give(player, arena, null);
+    }
+
+    /**
+     * Give to a player. [shopName] is used when the item has no name of its own (so it is not left with its vanilla
+     * one, like "Horse Spawn Egg").
+     */
+    public void give(Player player, IArena arena, String shopName) {
 
         ItemStack i = itemStack.clone();
+        if (shopName != null && !shopName.isEmpty()) {
+            ItemMeta named = i.getItemMeta();
+            if (named != null && !named.hasDisplayName()) {
+                named.setDisplayName(shopName);
+                i.setItemMeta(named);
+            }
+        }
         BedWars.debug("Giving BuyItem: " + getUpgradeIdentifier() + " to: " + player.getName());
 
         if (autoEquip && nms.isArmor(itemStack)) {

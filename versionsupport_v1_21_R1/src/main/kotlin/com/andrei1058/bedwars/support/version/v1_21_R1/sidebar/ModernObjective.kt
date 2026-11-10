@@ -47,13 +47,11 @@ internal class ModernObjective(
         val objective: Objective
         if (health) {
             // scores are pushed by the plugin (sendScore), so the criteria must not be read-only like Criteria.HEALTH
-            objective = board.registerNewObjective(objectiveName, Criteria.DUMMY, render(player), RenderType.HEARTS)
+            // INTEGER shows the raw health (out of 20) as a number instead of hearts, in the tab list and under the name
+            objective = board.registerNewObjective(objectiveName, Criteria.DUMMY, render(player), RenderType.INTEGER)
             // "health" is shown in the tab list, anything else (health2) under the name tag
             val isTabListObjective = objectiveName == "health"
             objective.displaySlot = if (isTabListObjective) DisplaySlot.PLAYER_LIST else DisplaySlot.BELOW_NAME
-            if (!isTabListObjective) {
-                objective.renderType = RenderType.INTEGER
-            }
         } else {
             objective = board.registerNewObjective(objectiveName, Criteria.DUMMY, render(player))
             objective.displaySlot = DisplaySlot.SIDEBAR

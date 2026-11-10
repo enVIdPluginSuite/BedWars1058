@@ -212,8 +212,18 @@ public class CategoryContent implements ICategoryContent {
      * Add tier items to player inventory
      */
     public void giveItems(Player player, ShopCache shopCache, IArena arena) {
-        for (IBuyItem bi : contentTiers.get(shopCache.getContentTier(getIdentifier()) - 1).getBuyItemsList()) {
-            bi.give(player, arena);
+        IContentTier tier = contentTiers.get(shopCache.getContentTier(getIdentifier()) - 1);
+        String shopName = null;
+        if (itemNamePath != null && Language.getPlayerLanguage(player).getYml().get(itemNamePath) != null) {
+            shopName = getMsg(player, itemNamePath).replace("{color}", ChatColor.GREEN.toString())
+                    .replace("{tier}", getRomanNumber(tier.getValue())).trim();
+        }
+        for (IBuyItem bi : tier.getBuyItemsList()) {
+            if (bi instanceof BuyItem) {
+                ((BuyItem) bi).give(player, arena, shopName);
+            } else {
+                bi.give(player, arena);
+            }
         }
     }
 

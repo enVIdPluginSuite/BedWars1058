@@ -83,7 +83,7 @@ public class ShopManager extends ConfigManager {
         getYml().addDefault(ConfigPath.SHOP_SPECIAL_SILVERFISH_DESPAWN, 15);
 
         getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_ENABLE, true);
-        getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_MATERIAL, BedWars.getForCurrentVersion("MONSTER_EGG", "MONSTER_EGG", "HORSE_SPAWN_EGG"));
+        getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_MATERIAL, golemEggMaterial());
         getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_DATA, 0);
         getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_HEALTH, 100.0);
         getYml().addDefault(ConfigPath.SHOP_SPECIAL_IRON_GOLEM_DESPAWN, 240);
@@ -311,8 +311,8 @@ public class ShopManager extends ConfigManager {
                     0, 1, "", "", "", false);
 
             adCategoryContentTier(ConfigPath.SHOP_PATH_CATEGORY_UTILITY, "dream-defender", 21, "tier1",
-                    BedWars.getForCurrentVersion("MONSTER_EGG", "MONSTER_EGG", "HORSE_SPAWN_EGG"), 0, 1, false, 120, "iron", false, false);
-            addBuyItem(ConfigPath.SHOP_PATH_CATEGORY_UTILITY, "dream-defender", "tier1", "defender", BedWars.getForCurrentVersion("MONSTER_EGG", "MONSTER_EGG", "HORSE_SPAWN_EGG"),
+                    golemEggMaterial(), 0, 1, false, 120, "iron", false, false);
+            addBuyItem(ConfigPath.SHOP_PATH_CATEGORY_UTILITY, "dream-defender", "tier1", "defender", golemEggMaterial(),
                     0, 1, "", "", "", false);
 
             adCategoryContentTier(ConfigPath.SHOP_PATH_CATEGORY_UTILITY, "fireball", 22, "tier1",
@@ -363,6 +363,8 @@ public class ShopManager extends ConfigManager {
         if (getYml().get(ConfigPath.SHOP_PATH_CATEGORY_ARMOR + ConfigPath.SHOP_CATEGORY_CONTENT_PATH + ".iron-armor") != null) {
             getYml().addDefault(ConfigPath.SHOP_PATH_CATEGORY_ARMOR + ConfigPath.SHOP_CATEGORY_CONTENT_PATH + ".iron-armor" + "." + ConfigPath.SHOP_CATEGORY_CONTENT_WEIGHT, 1);
         }
+
+        migrateGolemEgg();
 
         //try materials
         try {
@@ -450,6 +452,45 @@ public class ShopManager extends ConfigManager {
     /**
      * Create a tier for a shop content
      */
+
+    /**
+     * Icon of the Dream Defender: the iron golem spawn egg (exists since 1.19.3), the horse spawn egg before that.
+     */
+    public static String golemEggMaterial() {
+        String legacy = BedWars.getForCurrentVersion("MONSTER_EGG", "MONSTER_EGG", "HORSE_SPAWN_EGG");
+        try {
+            Material.valueOf("IRON_GOLEM_SPAWN_EGG");
+            if (!legacy.equals("MONSTER_EGG")) {
+                return "IRON_GOLEM_SPAWN_EGG";
+            }
+        } catch (IllegalArgumentException ignored) {
+            // older server
+        }
+        return legacy;
+    }
+
+    /**
+     * Shop files saved before the golem egg was used still say HORSE_SPAWN_EGG: switch those to the golem egg.
+     */
+    private void migrateGolemEgg() {
+        String egg = golemEggMaterial();
+        if (!egg.equals("IRON_GOLEM_SPAWN_EGG")) {
+            return;
+        }
+        String base = ConfigPath.SHOP_PATH_CATEGORY_UTILITY + ConfigPath.SHOP_CATEGORY_CONTENT_PATH + ".dream-defender."
+                + ConfigPath.SHOP_CATEGORY_CONTENT_CONTENT_TIERS + ".tier1";
+        String[] paths = {
+                ConfigPath.SHOP_SPECIAL_IRON_GOLEM_MATERIAL,
+                base + ConfigPath.SHOP_CONTENT_TIER_ITEM_MATERIAL,
+                base + "." + ConfigPath.SHOP_CONTENT_BUY_ITEMS_PATH + ".defender.material"
+        };
+        for (String path : paths) {
+            if ("HORSE_SPAWN_EGG".equals(getYml().getString(path))) {
+                getYml().set(path, egg);
+            }
+        }
+    }
+
     public void adCategoryContentTier(String path, String contentName, int contentSlot, String tierName, String tierMaterial, int tierData, int amount, boolean enchant, int tierCost, String tierCurrency, boolean permanent,
                                       boolean downgradable) {
         path += ConfigPath.SHOP_CATEGORY_CONTENT_PATH + "." + contentName + ".";
