@@ -107,6 +107,8 @@ public class MainConfig extends ConfigManager {
         // team marker in the tab list (Hypixel style): {teamLetter} = coloured first letter (R), {teamTag} = [RED], {teamName} = Red
         yml.addDefault("scoreboard-settings.tab-list.team-tag", "{teamLetter} ");
         yml.addDefault("scoreboard-settings.date-format", "MM/dd/yyyy");
+        // the player's visible name in the tab list while playing: {teamTag}, {vPrefix} (rank), {vSuffix}, {teamColor}, {name}
+        yml.addDefault("scoreboard-settings.tab-list.name-format", "{teamTag}{vPrefix}{teamColor}{name}");
         yml.addDefault(ConfigPath.GENERAL_CONFIGURATION_GAME_END_COUNTDOWN, 120);
         yml.addDefault(ConfigPath.GENERAL_CONFIGURATION_SHOUT_COOLDOWN, 30);
         yml.addDefault(ConfigPath.GENERAL_CONFIG_PLACEHOLDERS_REPLACEMENTS_SERVER_IP, "yourServer.Com");

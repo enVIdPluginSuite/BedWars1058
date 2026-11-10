@@ -352,6 +352,68 @@ public class BwTabList {
         if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
             teamTab.setNameTagVisibility(PlayerTab.NameTagVisibility.NEVER);
         }
+        applyListName(player, replacements);
+    }
+
+    /** Tab list names this plugin set, to tell them apart from the name another plugin (rank, chat) set. */
+    private static final java.util.concurrent.ConcurrentHashMap<UUID, String> LAST_SET_LIST_NAME = new java.util.concurrent.ConcurrentHashMap<>();
+    /** The tab list name the player had before this plugin changed it. */
+    private static final java.util.concurrent.ConcurrentHashMap<UUID, String> ORIGINAL_LIST_NAME = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * The rank as the player's own tab list name shows it, with the colours it was given there (for example red
+     * brackets and a white rank). Falls back to the chat plugin prefix when the name has no recognisable rank.
+     */
+    private @NotNull String rankOf(@NotNull Player player) {
+        String current = player.getPlayerListName();
+        if (!current.equals(LAST_SET_LIST_NAME.get(player.getUniqueId()))) {
+            ORIGINAL_LIST_NAME.put(player.getUniqueId(), current);
+        }
+        String original = ORIGINAL_LIST_NAME.getOrDefault(player.getUniqueId(), current);
+        int at = original.lastIndexOf(player.getName());
+        if (at < 0) {
+            return BedWars.getChatSupport().getPrefix(player);
+        }
+        // the colour codes right before the name belong to the name, not to the rank
+        String rank = original.substring(0, at);
+        return rank.replaceAll("(?i)(§[0-9a-fk-or])+$", "");
+    }
+
+    /**
+     * Clients ignore a scoreboard team's prefix when the player has a custom tab list name (set by a chat or rank
+     * plugin, for example), so the visible name itself is set: team tag, rank, then the name in the team color.
+     * Configurable with scoreboard-settings.tab-list.name-format; empty disables it. The original name is restored
+     * when the player leaves the arena (PlayerGoods).
+     */
+    private void applyListName(@NotNull Player player, @NotNull HashMap<String, String> replacements) {
+        String format = BedWars.config.getYml().getString("scoreboard-settings.tab-list.name-format", "{teamTag}{vPrefix}{teamColor}{name}");
+        if (format == null || format.isEmpty()) {
+            return;
+        }
+        String tag = BedWars.config.getYml().getString("scoreboard-settings.tab-list.team-tag", "{teamLetter} ");
+        String rank = rankOf(player);
+        String listName = format
+                .replace("{teamTag}", tag == null ? "" : tag)
+                // the rank has its own colour: white unless the prefix sets another. An explicit colour is needed
+                // because a reset code would inherit the team colour that clients apply to the whole name
+                .replace("{vPrefix}", "&f" + rank + "&f")
+                .replace("{vSuffix}", "&f" + BedWars.getChatSupport().getSuffix(player))
+                .replace("{name}", player.getName());
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            listName = listName.replace(entry.getKey(), entry.getValue());
+        }
+        final String finalName = org.bukkit.ChatColor.translateAlternateColorCodes('&', listName);
+        Runnable apply = () -> {
+            if (player.isOnline() && !finalName.equals(player.getPlayerListName())) {
+                player.setPlayerListName(finalName);
+                LAST_SET_LIST_NAME.put(player.getUniqueId(), finalName);
+            }
+        };
+        if (Bukkit.isPrimaryThread()) {
+            apply.run();
+        } else {
+            Bukkit.getScheduler().runTask(BedWars.plugin, apply);
+        }
     }
 
     @NotNull

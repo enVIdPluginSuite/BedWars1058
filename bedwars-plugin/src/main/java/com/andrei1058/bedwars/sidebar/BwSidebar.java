@@ -236,13 +236,17 @@ public class BwSidebar implements ISidebar {
             String finalTemp = line;
 
             String[] divided = finalTemp.split(",");
+            // {comma} is a comma that does not split the line into animation frames
+            for (int i = 0; i < divided.length; i++) {
+                divided[i] = divided[i].replace("{comma}", ",");
+            }
 
             SidebarLine sidebarLine;
 
             if (divided.length > 1) {
                 sidebarLine = normalizeTitle(Arrays.asList(divided));
             } else {
-                sidebarLine = new BwSidebarLine(finalTemp, scoreLine);
+                sidebarLine = new BwSidebarLine(finalTemp.replace("{comma}", ","), scoreLine);
             }
 
             lines.add(sidebarLine);
@@ -291,7 +295,7 @@ public class BwSidebar implements ISidebar {
                     String.valueOf(Bukkit.getOnlinePlayers().size()))
             );
             providers.add(new PlaceholderProvider("{tabStatus}", () ->
-                    "&fOnline: &a" + Bukkit.getOnlinePlayers().size()));
+                    org.bukkit.ChatColor.translateAlternateColorCodes('&', "&fOnline: &a" + Bukkit.getOnlinePlayers().size())));
             PlayerStats persistentStats = BedWars.getStatsManager().get(player.getUniqueId());
             //noinspection ConstantConditions
             if (null != persistentStats) {
@@ -522,7 +526,8 @@ public class BwSidebar implements ISidebar {
     private static List<String> translateColors(List<String> lines) {
         List<String> out = new ArrayList<>(lines.size());
         for (String l : lines) {
-            out.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', l));
+            // tab header/footer lines are never animations: keep their commas
+            out.add(org.bukkit.ChatColor.translateAlternateColorCodes('&', l).replace(",", "{comma}"));
         }
         return out;
     }
