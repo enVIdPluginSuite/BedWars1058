@@ -70,6 +70,21 @@ public class UpgradesManager {
         oldFile.delete();
 
         upgrades = new UpgradesConfig("upgrades2", plugin.getDataFolder().getPath());
+        loadAll();
+        BedWars.registerEvents(new InventoryListener(), new UpgradeOpenListener());
+    }
+
+    /**
+     * Re-reads upgrades2.yml and rebuilds the team upgrade menus (the listeners stay registered). Arenas that are
+     * running keep the menus they were created with.
+     */
+    public static void reloadConfig() {
+        menuContentByName.clear();
+        upgrades.reload();
+        loadAll();
+    }
+
+    private static void loadAll() {
         String name;
         for (String index : upgrades.getYml().getConfigurationSection("").getKeys(false)) {
             name = index;
@@ -110,8 +125,6 @@ public class UpgradesManager {
                 }
             }
         }
-
-        BedWars.registerEvents(new InventoryListener(), new UpgradeOpenListener());
     }
 
     /**

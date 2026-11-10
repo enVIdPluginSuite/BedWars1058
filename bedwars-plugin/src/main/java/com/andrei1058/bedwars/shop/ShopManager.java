@@ -570,6 +570,15 @@ public class ShopManager extends ConfigManager {
     }
 
     /**
+     * Re-reads shop.yml and rebuilds the shop menus. Players that have the shop open keep the old menu until they
+     * reopen it.
+     */
+    public void reloadShop() {
+        reload();
+        loadShop();
+    }
+
+    /**
      * Register shop related listeners
      */
     private void registerListeners() {
