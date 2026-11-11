@@ -91,22 +91,19 @@ public class v1_8_R3 extends VersionSupport {
 
     @Override
     public void sendTitle(Player p, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
-        if (title != null) {
-            if (!title.isEmpty()) {
-                IChatBaseComponent bc = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + title + "\"}");
-                PacketPlayOutTitle tit = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, bc);
-                PacketPlayOutTitle length = new PacketPlayOutTitle(fadeIn, stay, fadeOut);
-                ((CraftPlayer) p).getHandle().playerConnection.sendPacket(tit);
-                ((CraftPlayer) p).getHandle().playerConnection.sendPacket(length);
-            }
+        PlayerConnection connection = ((CraftPlayer) p).getHandle().playerConnection;
+        // a 1.8 client only shows a subtitle together with a title, and takes the timings that arrived before it
+        connection.sendPacket(new PacketPlayOutTitle(fadeIn, stay, fadeOut));
+        connection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE,
+                IChatBaseComponent.ChatSerializer.a(titleJson(title == null || title.isEmpty() ? " " : title))));
+        if (subtitle != null && !subtitle.isEmpty()) {
+            connection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE,
+                    IChatBaseComponent.ChatSerializer.a(titleJson(subtitle))));
         }
-        if (subtitle != null) {
-            IChatBaseComponent bc = IChatBaseComponent.ChatSerializer.a("{\"text\": \"" + subtitle + "\"}");
-            PacketPlayOutTitle tit = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, bc);
-            PacketPlayOutTitle length = new PacketPlayOutTitle(fadeIn, stay, fadeOut);
-            ((CraftPlayer) p).getHandle().playerConnection.sendPacket(tit);
-            ((CraftPlayer) p).getHandle().playerConnection.sendPacket(length);
-        }
+    }
+
+    private static String titleJson(String text) {
+        return "{\"text\": \"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
     }
 
     @Override
