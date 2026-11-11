@@ -573,9 +573,8 @@ public class BedWars extends JavaPlugin {
             nms.registerCommand("shout", new ShoutCommand("shout"));
         }
         nms.registerCommand("rejoin", new RejoinCommand("rejoin"));
-        if (!(nms.isBukkitCommandRegistered("leave") && getServerType() == ServerType.BUNGEE)) {
-            nms.registerCommand("leave", new LeaveCommand("leave"));
-        }
+        // /leave and /l only exist when no other plugin has them (they are aliases of /bwleave)
+        nms.registerCommand("bwleave", new LeaveCommand("bwleave"));
         if (getServerType() != ServerType.BUNGEE && config.getBoolean(ConfigPath.GENERAL_ENABLE_PARTY_CMD)) {
             Bukkit.getLogger().info("Registering /party command..");
             nms.registerCommand("party", new PartyCommand("party"));

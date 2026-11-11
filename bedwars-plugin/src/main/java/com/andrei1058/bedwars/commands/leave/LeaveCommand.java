@@ -26,10 +26,16 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
 
+/**
+ * Takes /leave and /l to go back to the lobby, as the lowest priority: both are registered as aliases of this command,
+ * so any other plugin that has them keeps them (the command map never lets an alias replace a command that is already
+ * there, and lets a command registered later replace an alias).
+ */
 public class LeaveCommand extends BukkitCommand {
 
     public LeaveCommand(String name) {
         super(name);
+        setAliases(java.util.Arrays.asList("leave", "l"));
     }
 
     @Override
