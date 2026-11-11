@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
+import org.bukkit.event.server.ServerCommandEvent
 
 /**
  * Takes over four BedWars1058 sub-commands by cancelling the command before BedWars1058 sees it
@@ -25,9 +26,23 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent
  */
 class CommandInterceptor(private val plugin: Management) : Listener {
 
+    /** `/arenamanagement` (alias `/bwam`) works from the console too; BedWars1058 has no plugin.yml entry for it. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onConsole(event: ServerCommandEvent) {
+        val parts = event.command.trim().removePrefix("/").split(Regex("\\s+"))
+        if (parts[0].lowercase() !in MANAGEMENT_LABELS) return
+        event.isCancelled = true
+        plugin.onCommand(event.sender, parts[0], parts.drop(1))
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onCommand(event: PlayerCommandPreprocessEvent) {
         val parts = event.message.trim().removePrefix("/").split(Regex("\\s+"))
+        if (parts[0].lowercase() in MANAGEMENT_LABELS) {
+            event.isCancelled = true
+            plugin.onCommand(event.player, parts[0], parts.drop(1))
+            return
+        }
         if (parts.size < 2) return
 
         // "bedwars1058:bw" style namespaced labels are accepted too.
@@ -98,5 +113,9 @@ class CommandInterceptor(private val plugin: Management) : Listener {
             }
         }
         plugin.later(1L) { ArenaSelectorMenu(plugin, player, group).open() }
+    }
+
+    private companion object {
+        val MANAGEMENT_LABELS = setOf("arenamanagement", "bwam")
     }
 }

@@ -6,6 +6,7 @@ import com.andrei1058.bedwars.management.arena.ArenaRepository
 import com.andrei1058.bedwars.management.arena.BulkRunner
 import com.andrei1058.bedwars.management.bedwars.BedWarsHook
 import com.andrei1058.bedwars.management.command.CommandInterceptor
+import com.andrei1058.bedwars.management.gui.ArenaBrowserMenu
 import com.andrei1058.bedwars.management.gui.ArenaSelectorMenu
 import com.andrei1058.bedwars.management.gui.MenuListener
 import com.andrei1058.bedwars.management.session.ChatPrompts
@@ -13,6 +14,7 @@ import com.andrei1058.bedwars.management.session.SessionManager
 import com.andrei1058.bedwars.management.util.Text
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
@@ -86,9 +88,18 @@ class Management(val owner: BedWars) {
         for (menu in liveSelectors.toList()) menu.player.closeInventory()
     }
 
-    /** Reads management.yml, writing the bundled default first when it is missing. */
+    /**
+     * Reads management.yml. When it is missing, the config of the standalone BedWars1058-ArenaManagement plugin is
+     * adopted if there is one, otherwise the bundled default is written.
+     */
     private fun loadConfig() {
-        if (!configFile.isFile) owner.saveResource("management.yml", false)
+        if (!configFile.isFile) {
+            val old = File(owner.dataFolder.parentFile, "BedWars1058-ArenaManagement/config.yml")
+            if (old.isFile) {
+                runCatching { old.copyTo(configFile) }.onSuccess { logger.info("Imported the ArenaManagement config from ${old.path}.") }
+            }
+            if (!configFile.isFile) owner.saveResource("management.yml", false)
+        }
         val loaded = YamlConfiguration.loadConfiguration(configFile)
         owner.getResource("management.yml")?.use { stream ->
             loaded.setDefaults(YamlConfiguration.loadConfiguration(InputStreamReader(stream, Charsets.UTF_8)))
@@ -123,6 +134,38 @@ class Management(val owner: BedWars) {
 
     fun msg(target: CommandSender, text: String) {
         target.sendMessage(settings.prefix + Text.color(text))
+    }
+
+    /** `/arenamanagement <reload|menu|gui [group]>`, same as the standalone plugin's command. */
+    fun onCommand(sender: CommandSender, label: String, args: List<String>): Boolean {
+        val sub = args.firstOrNull()?.lowercase()
+        when (sub) {
+            "reload" -> {
+                if (!sender.hasPermission("arenamanagement.admin")) {
+                    msg(sender, "&cYou do not have permission.")
+                    return true
+                }
+                reload()
+                msg(sender, "&aConfig reloaded.")
+            }
+            "menu", "gui" -> {
+                if (sender !is Player) {
+                    msg(sender, "&cOnly players can open menus.")
+                    return true
+                }
+                if (sub == "menu") {
+                    if (!sender.hasPermission(settings.permission)) {
+                        msg(sender, "&cYou do not have permission.")
+                        return true
+                    }
+                    ArenaBrowserMenu(this, sender).open()
+                } else {
+                    interceptor.openSelector(sender, args.getOrNull(1))
+                }
+            }
+            else -> msg(sender, "&7Usage: &e/$label <reload|menu|gui [group]>")
+        }
+        return true
     }
 
     companion object {
