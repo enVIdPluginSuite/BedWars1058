@@ -24,6 +24,9 @@ internal class ModernScoreLine(
     /** Last left-side text pushed to each receiver, to avoid redundant packets. */
     private val sentText = ConcurrentHashMap<UUID, String>()
 
+    /** For pre-1.13 clients: the scoreboard entry that currently carries the row text. */
+    private val sentEntry = ConcurrentHashMap<UUID, String>()
+
     /** Last right-side (score column) text pushed to each receiver. */
     private val sentRightText = ConcurrentHashMap<UUID, String>()
 
@@ -64,7 +67,7 @@ internal class ModernScoreLine(
                 continue
             }
             val objective = objectiveOf(player) ?: continue
-            val row = objective.getScore(entryName())
+            val row = objective.getScore(sentEntry[player.uniqueId] ?: entryName())
             if (!row.isScoreSet || row.score != score) {
                 row.score = score
             }
@@ -81,6 +84,13 @@ internal class ModernScoreLine(
         val objective = objectiveOf(player) ?: return
         val board = objective.scoreboard ?: return
 
+        if (ClientVersions.isLegacy(player)) {
+            applyLegacy(player, objective)
+            return
+        }
+        // the player may have been a legacy client a moment ago (reconnect with another client): drop that row
+        if (sentEntry.containsKey(player.uniqueId)) dropLegacy(player, board)
+
         var team = board.getTeam(teamName())
         if (team == null) {
             team = board.registerNewTeam(teamName())
@@ -93,6 +103,37 @@ internal class ModernScoreLine(
         }
         applyContent(player, team, objective)
     }
+
+    /**
+     * Pre-1.13 clients (Lunar 1.8.9 through ViaVersion) lose whatever does not fit the 16 characters of a team prefix,
+     * and in practice the suffix does not arrive either, so a row is cut off after 16 characters. They get the whole
+     * row (up to the 40 characters of a 1.8 score name) as the scoreboard entry itself instead, with no team at all.
+     * The entry changes whenever the text does, so the previous one is removed.
+     */
+    private fun applyLegacy(player: Player, objective: Objective) {
+        val text = render(player)
+        val entry = legacyEntry(text)
+        val previous = sentEntry.put(player.uniqueId, entry)
+        sentText.put(player.uniqueId, text)
+        val board = objective.scoreboard ?: return
+
+        // a team left over from the modern layout would put its (empty) prefix around the entry
+        board.getTeam(teamName())?.unregister()
+
+        val row = objective.getScore(entry)
+        if (!row.isScoreSet || row.score != scoreAmount) row.score = scoreAmount
+        if (previous != null && previous != entry) board.resetScores(previous)
+        if (paper && sentRightText.put(player.uniqueId, "") == null) PaperNumbers.apply(row, "")
+    }
+
+    private fun dropLegacy(player: Player, board: org.bukkit.scoreboard.Scoreboard) {
+        sentEntry.remove(player.uniqueId)?.let { board.resetScores(it) }
+        sentText.remove(player.uniqueId)
+        sentRightText.remove(player.uniqueId)
+    }
+
+    /** The row text as a unique entry of at most [ENTRY_MAX] characters: the row's colour code at the end tells rows apart. */
+    private fun legacyEntry(text: String): String = clampEntry(text, ENTRY_MAX - lineColor.length) + lineColor
 
     /** Pushes text, score and score column text, skipping whatever the receiver already has. */
     private fun applyContent(player: Player, team: Team, objective: Objective) {
@@ -141,6 +182,7 @@ internal class ModernScoreLine(
     override fun sendRemove(player: Player) {
         sentText.remove(player.uniqueId)
         sentRightText.remove(player.uniqueId)
+        sentEntry.remove(player.uniqueId)?.let { player.scoreboard.resetScores(it) }
 
         val board = player.scoreboard
         val objective = board.getObjective(sidebar.sidebarObjective.name)
@@ -161,6 +203,17 @@ internal class ModernScoreLine(
 
     companion object {
         private const val HALF = 16
+
+        /** The longest score name a 1.8 client accepts. */
+        private const val ENTRY_MAX = 40
+
+        /** [text] cut to at most [max] characters without leaving half a colour code at the end. */
+        internal fun clampEntry(text: String, max: Int): String {
+            if (text.length <= max) return text
+            var cut = max
+            if (text[cut - 1] == '§') cut--
+            return text.substring(0, cut)
+        }
 
         /**
          * Splits [text] into a team prefix of at most [HALF] characters and the rest as suffix, without cutting a
