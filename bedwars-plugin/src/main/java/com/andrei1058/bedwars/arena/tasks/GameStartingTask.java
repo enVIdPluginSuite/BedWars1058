@@ -157,11 +157,22 @@ public class GameStartingTask implements Runnable, StartingTask {
             for (Player player : getArena().getPlayers()) {
                 Language playerLang = Language.getPlayerLanguage(player);
                 String[] titleSubtitle = Language.getCountDownTitle(playerLang, getCountdown());
-                nms.sendTitle(player, titleSubtitle[0], titleSubtitle[1], 0, 20, 10);
+                nms.sendTitle(player, titleSubtitle[0], legacyDigits(titleSubtitle[1]), 0, 20, 10);
                 player.sendMessage(getMsg(player, Messages.ARENA_STATUS_START_COUNTDOWN_CHAT).replace("{time}", String.valueOf(getCountdown())));
             }
         }
         countdown--;
+    }
+
+    /**
+     * The 1.8 font has no circled digits (the default countdown uses them for 5 to 1): show plain digits there.
+     */
+    private String legacyDigits(String text) {
+        if (nms.getVersion() > 0 || text == null) {
+            return text;
+        }
+        return text.replace("\u2776", "1").replace("\u2777", "2").replace("\u2778", "3")
+                .replace("\u2779", "4").replace("\u277A", "5");
     }
 
     //Spawn players
