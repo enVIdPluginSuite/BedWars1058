@@ -47,6 +47,9 @@ public class ArenaSelectorListener implements Listener {
         if (!(BedWars.nms.getTopInventory(player).getHolder() instanceof ArenaGUI.ArenaSelectorHolder)) return;
 
         event.setCancelled(true);
+        ArenaGUI.ArenaSelectorHolder holder = (ArenaGUI.ArenaSelectorHolder) BedWars.nms.getTopInventory(player).getHolder();
+        // still being filled: nothing can be clicked yet
+        if (!holder.isReady()) return;
 
         ItemStack item = event.getCurrentItem();
         if (item == null) return;
@@ -65,6 +68,11 @@ public class ArenaSelectorListener implements Listener {
         IArena arena = Arena.getArenaByIdentifier(key);
         if (arena == null) arena = Arena.getArenaByName(key);
         if (arena == null) return;
+        // never act on a game outside the group this menu was opened for
+        if (!ArenaGUI.groupMatches(holder.getGroup(), arena.getGroup())) {
+            Sounds.playSound("join-denied", player);
+            return;
+        }
         GameState status = arena.getStatus();
 
         if (event.getClick() == ClickType.LEFT) {
@@ -75,12 +83,14 @@ public class ArenaSelectorListener implements Listener {
                 player.sendMessage(Language.getMsg(player, Messages.ARENA_JOIN_DENIED_SELECTOR));
             }
         } else if (event.getClick() == ClickType.RIGHT) {
-            if (status == GameState.playing && arena.addSpectator(player, false, null)) {
-                Sounds.playSound("spectate-allowed", player);
-            } else {
-                player.sendMessage(Language.getMsg(player, Messages.ARENA_SPECTATE_DENIED_SELECTOR));
-                Sounds.playSound("spectate-denied", player);
-            }
+            // a second menu lists every running game of this map (of the menu's group), with its players
+            final String mapName = arena.getArenaName();
+            final String group = holder.getGroup();
+            player.closeInventory();
+            Bukkit.getScheduler().runTask(BedWars.plugin, () -> {
+                if (player.isOnline()) SpectateMenu.open(player, mapName, group);
+            });
+            return;
         } else {
             // Incorrect click
             return;

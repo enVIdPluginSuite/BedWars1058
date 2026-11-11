@@ -70,10 +70,16 @@ public final class SpectateMenu {
      * are spectating one). That game itself is left out.
      */
     public static List<IArena> spectatable(String arenaName, Player viewer) {
+        return spectatable(arenaName, null, viewer);
+    }
+
+    /** Like {@link #spectatable(String, Player)}, limited to the arena groups of [group] ("default" or null: all). */
+    public static List<IArena> spectatable(String arenaName, String group, Player viewer) {
         IArena current = viewer == null ? null : Arena.getArenaByPlayer(viewer);
         List<IArena> list = new ArrayList<>();
         for (IArena a : Arena.getArenas()) {
             if (a == current) continue;
+            if (!com.andrei1058.bedwars.arena.ArenaGUI.groupMatches(group, a.getGroup())) continue;
             if (a.getStatus() != GameState.playing) continue;
             if (!a.isAllowSpectate()) continue;
             if (arenaName != null && !a.getArenaName().equalsIgnoreCase(arenaName)) continue;
@@ -89,12 +95,21 @@ public final class SpectateMenu {
      * @return false when there is nothing to spectate.
      */
     public static boolean open(Player p, String arenaName) {
+        return open(p, arenaName, null);
+    }
+
+    /**
+     * Opens the menu with every running game of an arena, within the given arena groups.
+     *
+     * @param group "default" or null for every group.
+     */
+    public static boolean open(Player p, String arenaName, String group) {
         if (!canLeaveForSpectating(p)) {
             p.sendMessage(Language.getMsg(p, MSG_DENIED));
             Sounds.playSound("spectate-denied", p);
             return false;
         }
-        List<IArena> games = spectatable(arenaName, p);
+        List<IArena> games = spectatable(arenaName, group, p);
         if (games.isEmpty()) {
             p.sendMessage(Language.getMsg(p, MSG_NONE));
             Sounds.playSound("spectate-denied", p);
@@ -112,7 +127,7 @@ public final class SpectateMenu {
         }
 
         int size = Math.min(54, Math.max(9, ((games.size() + 8) / 9) * 9));
-        Inventory inv = Bukkit.createInventory(new Holder(arenaName), size, Language.getMsg(p, MSG_TITLE));
+        Inventory inv = Bukkit.createInventory(new Holder(arenaName, group), size, Language.getMsg(p, MSG_TITLE));
         String material = BedWars.config.getString(ConfigPath.GENERAL_CONFIGURATION_ARENA_SELECTOR_STATUS_MATERIAL.replace("%path%", "playing"));
         short data = (short) BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_ARENA_SELECTOR_STATUS_DATA.replace("%path%", "playing"));
 
@@ -125,8 +140,19 @@ public final class SpectateMenu {
             ItemMeta im = item.getItemMeta();
             im.setDisplayName(fill(Language.getMsg(p, MSG_ITEM_NAME), g, number));
             List<String> lore = new ArrayList<>();
+            boolean listsPlayers = false;
             for (String line : Language.getList(p, MSG_ITEM_LORE)) {
-                lore.add(fill(line, g, number));
+                if (line.contains("{players}")) {
+                    lore.addAll(playerLines(g));
+                    listsPlayers = true;
+                } else {
+                    lore.add(fill(line, g, number));
+                }
+            }
+            if (!listsPlayers) {
+                // language files saved by older versions have no {players} line: put the list before the last paragraph
+                int at = lore.lastIndexOf("");
+                lore.addAll(at < 0 ? lore.size() : at, playerLines(g));
             }
             im.setLore(lore);
             item.setItemMeta(im);
@@ -169,6 +195,25 @@ public final class SpectateMenu {
         return game.addSpectator(p, false, null);
     }
 
+    private static final int MAX_LISTED_PLAYERS = 16;
+
+    /** The players of a game, one per line and in their team color, so a viewer can tell which game to spectate. */
+    private static List<String> playerLines(IArena g) {
+        List<String> lines = new ArrayList<>();
+        lines.add("§7Playing:");
+        int shown = 0;
+        List<Player> players = new ArrayList<>(g.getPlayers());
+        for (Player pl : players) {
+            if (shown >= MAX_LISTED_PLAYERS) break;
+            com.andrei1058.bedwars.api.arena.team.ITeam team = g.getTeam(pl);
+            lines.add(" §8▪ " + (team == null ? "§f" : team.getColor().chat().toString()) + pl.getName());
+            shown++;
+        }
+        if (players.size() > shown) lines.add(" §8▪ §7+" + (players.size() - shown) + " more");
+        if (players.isEmpty()) lines.add(" §8▪ §7nobody");
+        return lines;
+    }
+
     private static String fill(String s, IArena g, int number) {
         int alive = 0;
         for (com.andrei1058.bedwars.api.arena.team.ITeam t : g.getTeams()) {
@@ -193,9 +238,15 @@ public final class SpectateMenu {
 
     public static final class Holder implements InventoryHolder {
         private final String arenaName;
+        private final String group;
 
-        Holder(String arenaName) {
+        Holder(String arenaName, String group) {
             this.arenaName = arenaName;
+            this.group = group;
+        }
+
+        public String getGroup() {
+            return group;
         }
 
         public String getArenaName() {
