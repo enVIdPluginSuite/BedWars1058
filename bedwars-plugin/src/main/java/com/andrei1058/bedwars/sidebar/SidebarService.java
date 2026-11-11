@@ -212,6 +212,9 @@ public class SidebarService implements ISidebarService {
             lines = new ArrayList<>();
         }
         lines = lines.subList(1, lines.size());
+        if (null != arena) {
+            lines = withGameMode(lines);
+        }
 
         // at this point we are sure we need a sidebar instance
         boolean newlyAdded = false;
@@ -230,6 +233,29 @@ public class SidebarService implements ISidebarService {
         if (newlyAdded) {
             sidebars.put(player.getUniqueId(), sidebar);
         }
+    }
+
+    /**
+     * Adds the game mode (the arena group) under the date line when the text of the sidebar does not show it.
+     * Configurable with scoreboard-settings.game-mode.
+     */
+    private @NotNull List<String> withGameMode(@NotNull List<String> lines) {
+        var yml = BedWars.config.getYml();
+        String format = yml.getString("scoreboard-settings.game-mode.format", "&fMode: &a{group}");
+        if (!yml.getBoolean("scoreboard-settings.game-mode.enable", true) || format == null || format.isEmpty()
+                || lines.stream().anyMatch(l -> l.contains("{group}")) || lines.size() >= 15) {
+            return lines;
+        }
+        List<String> out = new ArrayList<>(lines);
+        int at = 0;
+        for (int i = 0; i < out.size(); i++) {
+            if (out.get(i).contains("{date}")) {
+                at = i + 1;
+                break;
+            }
+        }
+        out.add(at, format.replace(",", "{comma}"));
+        return out;
     }
 
     /**

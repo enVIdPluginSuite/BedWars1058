@@ -327,6 +327,7 @@ public class BwSidebar implements ISidebar {
         } else {
             providers.add(new PlaceholderProvider("{on}", () -> String.valueOf(arena.getPlayers().size())));
             providers.add(new PlaceholderProvider("{max}", () -> String.valueOf(arena.getMaxPlayers())));
+            providers.add(new PlaceholderProvider("{group}", () -> arena.getDisplayGroup(player)));
             providers.add(new PlaceholderProvider("{nextEvent}", this::getNextEventName));
             providers.add(new PlaceholderProvider("{tabStatus}", this::buildTabStatus));
 
@@ -532,6 +533,30 @@ public class BwSidebar implements ISidebar {
         return out;
     }
 
+    /** True when the game mode is enabled in the config and the given lines do not show it already. */
+    private boolean showGameMode(@NotNull List<String> lines) {
+        return config.getYml().getBoolean("scoreboard-settings.game-mode.enable", true)
+                && lines.stream().noneMatch(l -> l.contains("{group}"));
+    }
+
+    /** The lines with the game mode line right under the date line, or on top when there is no date. */
+    private @NotNull List<String> withGameMode(@NotNull List<String> lines) {
+        String format = config.getYml().getString("scoreboard-settings.game-mode.format", "&fMode: &a{group}");
+        if (format == null || format.isEmpty()) {
+            return lines;
+        }
+        List<String> out = new ArrayList<>(lines);
+        int at = 0;
+        for (int i = 0; i < out.size(); i++) {
+            if (out.get(i).contains("{date}")) {
+                at = i + 1;
+                break;
+            }
+        }
+        out.add(at, org.bukkit.ChatColor.translateAlternateColorCodes('&', format).replace(",", "{comma}"));
+        return out;
+    }
+
     // Provide header and footer for current game state
     private void assignTabHeaderFooter() {
         if (!config.getBoolean(ConfigPath.SB_CONFIG_TAB_HEADER_FOOTER_ENABLE)) {
@@ -623,6 +648,9 @@ public class BwSidebar implements ISidebar {
         if (header.isEmpty() && footer.isEmpty()) {
             header = lang.l(headerPath);
             footer = lang.l(footerPath);
+        }
+        if (null != arena && showGameMode(header) && showGameMode(footer)) {
+            header = withGameMode(header);
         }
 
         this.headerFooter = new TabHeaderFooter(
