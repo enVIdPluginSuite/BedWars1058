@@ -66,7 +66,7 @@ public class CmdSpectate extends SubCommand {
     public boolean canSee(CommandSender s, com.andrei1058.bedwars.api.BedWars api) {
         if (s instanceof ConsoleCommandSender) return false;
         Player p = (Player) s;
-        if (Arena.isInArena(p)) return false;
+        if (!SpectateMenu.canLeaveForSpectating(p)) return false;
         if (SetupSession.isInSetupSession(p.getUniqueId())) return false;
         return hasPermission(s);
     }

@@ -33,7 +33,7 @@ public class SpectateMenuListener implements Listener {
 
         IArena game = Arena.getArenaByIdentifier(data.substring(SpectateMenu.DATA_PREFIX.length()));
         player.closeInventory();
-        if (game != null && game.getStatus() == GameState.playing && game.addSpectator(player, false, null)) {
+        if (SpectateMenu.spectate(player, game)) {
             Sounds.playSound("spectate-allowed", player);
         } else {
             player.sendMessage(Language.getMsg(player, SpectateMenu.MSG_DENIED));
