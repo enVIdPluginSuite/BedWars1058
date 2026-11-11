@@ -398,6 +398,11 @@ public class BedWars extends JavaPlugin {
 
         /* Play menu (/bw play) */
         PlayMenuModule.enable();
+        try {
+            com.andrei1058.bedwars.management.Management.start(this);
+        } catch (Throwable t) {
+            getLogger().log(java.util.logging.Level.SEVERE, "Arena management could not start; the rest of BedWars1058 keeps working.", t);
+        }
 
         /* PlaceholderAPI Support */
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -583,6 +588,7 @@ public class BedWars extends JavaPlugin {
 
     public void onDisable() {
         shuttingDown = true;
+        com.andrei1058.bedwars.management.Management.stop();
         if (!serverSoftwareSupport) return;
         if (getServerType() == ServerType.BUNGEE) {
             ArenaSocket.disable();
