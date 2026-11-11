@@ -364,9 +364,12 @@ public class BwTabList {
      * The rank as the player's own tab list name shows it, with the colours it was given there (for example red
      * brackets and a white rank). Falls back to the chat plugin prefix when the name has no recognisable rank.
      */
-    private @NotNull String rankOf(@NotNull Player player) {
+    private @NotNull String rankOf(@NotNull Player player, @NotNull Map<String, String> replacements) {
         String current = player.getPlayerListName();
-        if (!current.equals(LAST_SET_LIST_NAME.get(player.getUniqueId()))) {
+        String lastSet = LAST_SET_LIST_NAME.get(player.getUniqueId());
+        // the server may hand our own name back with other colour codes; comparing the plain text keeps it from
+        // being taken for the player's own name and its team tag from piling up in the rank
+        if (lastSet == null || !org.bukkit.ChatColor.stripColor(current).equals(org.bukkit.ChatColor.stripColor(lastSet))) {
             ORIGINAL_LIST_NAME.put(player.getUniqueId(), current);
         }
         String original = ORIGINAL_LIST_NAME.getOrDefault(player.getUniqueId(), current);
@@ -376,6 +379,17 @@ public class BwTabList {
         }
         // the colour codes right before the name belong to the name, not to the rank
         String rank = original.substring(0, at);
+        // a team tag from an earlier pass is not part of the rank
+        String tag = BedWars.config.getYml().getString("scoreboard-settings.tab-list.team-tag", "{teamLetter} ");
+        if (tag != null && !tag.isEmpty()) {
+            for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                tag = tag.replace(entry.getKey(), entry.getValue());
+            }
+            String resolved = org.bukkit.ChatColor.translateAlternateColorCodes('&', tag);
+            while (!resolved.isEmpty() && rank.contains(resolved)) {
+                rank = rank.replace(resolved, "");
+            }
+        }
         return rank.replaceAll("(?i)(§[0-9a-fk-or])+$", "");
     }
 
@@ -391,7 +405,7 @@ public class BwTabList {
             return;
         }
         String tag = BedWars.config.getYml().getString("scoreboard-settings.tab-list.team-tag", "{teamLetter} ");
-        String rank = rankOf(player);
+        String rank = rankOf(player, replacements);
         String listName = format
                 .replace("{teamTag}", tag == null ? "" : tag)
                 // the rank has its own colour: white unless the prefix sets another. An explicit colour is needed
