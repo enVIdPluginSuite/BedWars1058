@@ -49,8 +49,15 @@ public class CmdGUI extends SubCommand {
         if (Arena.getArenaByPlayer(p) != null) return false;
 
         String group = "default";
-        if (args.length == 1){
+        if (args.length >= 1) {
             group = args[0];
+            // an unknown group must not fall back to showing every arena
+            for (String part : group.split("\\+")) {
+                if (!part.equalsIgnoreCase("default") && !com.andrei1058.bedwars.commands.bedwars.MainCommand.isArenaGroup(part)) {
+                    p.sendMessage(com.andrei1058.bedwars.api.language.Language.getMsg(p, com.andrei1058.bedwars.api.language.Messages.COMMAND_JOIN_GROUP_OR_ARENA_NOT_FOUND).replace("{name}", part));
+                    return true;
+                }
+            }
         }
 
         ArenaGUI.openGui(p, group);

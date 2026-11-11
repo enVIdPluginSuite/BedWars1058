@@ -59,22 +59,12 @@ public class ArenaGUI {
         if (p.getOpenInventory() == null) return;
         if (!(BedWars.nms.getTopInventory(p).getHolder() instanceof ArenaSelectorHolder)) return;
         ArenaSelectorHolder ash = ((ArenaSelectorHolder) BedWars.nms.getTopInventory(p).getHolder());
+        // nothing is listed before the menu is ready (see openGui), so no arena of another group can be clicked
+        if (!ash.isReady()) return;
 
-        List<IArena> arenas;
-        if (ash.getGroup().equalsIgnoreCase("default")) {
-            arenas = new ArrayList<>(Arena.getArenas());
-        } else {
-            arenas = new ArrayList<>();
-            // several groups can be combined with a plus, like in /bw join
-            String[] groups = ash.getGroup().split("\\+");
-            for (IArena a : Arena.getArenas()) {
-                for (String group : groups) {
-                    if (a.getGroup().equalsIgnoreCase(group)) {
-                        arenas.add(a);
-                        break;
-                    }
-                }
-            }
+        List<IArena> arenas = new ArrayList<>();
+        for (IArena a : Arena.getArenas()) {
+            if (groupMatches(ash.getGroup(), a.getGroup())) arenas.add(a);
         }
 
         arenas = Arena.getSorted(arenas);
@@ -186,15 +176,34 @@ public class ArenaGUI {
             }
         }
 
+        // The menu opens without any arena and fills itself on the next tick, for this group only. Until then no
+        // item can be clicked, so a game of another group is never joined by accident.
         p.openInventory(inv);
-        refreshInv(p, null, 0);
-        //refresh.put(p, new Object[]{inv, group});
         Sounds.playSound("arena-selector-open", p);
+        Bukkit.getScheduler().runTask(BedWars.plugin, () -> {
+            if (!p.isOnline() || !(BedWars.nms.getTopInventory(p).getHolder() == ash)) return;
+            ash.setReady();
+            refreshInv(p, null, 0);
+        });
+    }
+
+    /**
+     * Whether an arena of group [arenaGroup] belongs to a menu or command for [spec]: "default" (or nothing) is every
+     * arena, otherwise one or several groups combined with a plus, like in /bw join.
+     */
+    public static boolean groupMatches(String spec, String arenaGroup) {
+        if (spec == null || spec.isEmpty() || spec.equalsIgnoreCase("default")) return true;
+        if (arenaGroup == null) return false;
+        for (String group : spec.split("\\+")) {
+            if (group.equalsIgnoreCase("default") || arenaGroup.equalsIgnoreCase(group)) return true;
+        }
+        return false;
     }
 
     public static class ArenaSelectorHolder implements InventoryHolder {
 
         private String group;
+        private volatile boolean ready;
         //private Inventory inv;
 
         public ArenaSelectorHolder(String group) {
@@ -203,6 +212,15 @@ public class ArenaGUI {
 
         public String getGroup() {
             return group;
+        }
+
+        /** False until the menu has been filled for its group. */
+        public boolean isReady() {
+            return ready;
+        }
+
+        void setReady() {
+            ready = true;
         }
 
         @Override
