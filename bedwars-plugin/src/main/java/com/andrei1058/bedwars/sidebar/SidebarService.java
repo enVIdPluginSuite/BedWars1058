@@ -30,7 +30,8 @@ public class SidebarService implements ISidebarService {
     private static SidebarService instance;
 
     private final SidebarManager sidebarHandler;
-    private final HashMap<UUID, BwSidebar> sidebars = new HashMap<>();
+    // the title/placeholder refresh tasks iterate this off the main thread while players join and leave
+    private final java.util.concurrent.ConcurrentHashMap<UUID, BwSidebar> sidebars = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static boolean init(JavaPlugin plugin) {
         if (null == instance) {
