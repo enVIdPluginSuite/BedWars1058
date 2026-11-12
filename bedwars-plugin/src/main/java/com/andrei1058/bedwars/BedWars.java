@@ -332,6 +332,17 @@ public class BedWars extends JavaPlugin {
                     party = new com.andrei1058.bedwars.support.party.Internal();
                     out.info("Loading internal Party system. /party");
                 }
+
+                // /party: the built-in system has its own Hypixel-style command, other providers keep the generic one
+                if (getServerType() != ServerType.BUNGEE && config.getBoolean(ConfigPath.GENERAL_ENABLE_PARTY_CMD)) {
+                    Bukkit.getLogger().info("Registering /party command..");
+                    if (party.isInternal()) {
+                        nms.registerCommand("party", new com.andrei1058.bedwars.party.PartyCommand("party"));
+                        nms.registerCommand("pc", new com.andrei1058.bedwars.party.PartyChatCommand("pc"));
+                    } else {
+                        nms.registerCommand("party", new PartyCommand("party"));
+                    }
+                }
             } else {
                 party = new NoParty();
             }
@@ -397,6 +408,9 @@ public class BedWars extends JavaPlugin {
 
         /* Play menu (/bw play) */
         PlayMenuModule.enable();
+
+        /* Parties and Play Again */
+        com.andrei1058.bedwars.party.PartyModule.INSTANCE.enable(this);
         try {
             com.andrei1058.bedwars.management.Management.start(this);
         } catch (Throwable t) {
@@ -579,15 +593,12 @@ public class BedWars extends JavaPlugin {
         nms.registerCommand("rejoin", new RejoinCommand("rejoin"));
         // /leave and /l only exist when no other plugin has them (they are aliases of /bwleave)
         nms.registerCommand("bwleave", new LeaveCommand("bwleave"));
-        if (getServerType() != ServerType.BUNGEE && config.getBoolean(ConfigPath.GENERAL_ENABLE_PARTY_CMD)) {
-            Bukkit.getLogger().info("Registering /party command..");
-            nms.registerCommand("party", new PartyCommand("party"));
-        }
     }
 
     public void onDisable() {
         shuttingDown = true;
         com.andrei1058.bedwars.management.Management.stop();
+        com.andrei1058.bedwars.party.PartyModule.INSTANCE.disable();
         if (!serverSoftwareSupport) return;
         if (getServerType() == ServerType.BUNGEE) {
             ArenaSocket.disable();
