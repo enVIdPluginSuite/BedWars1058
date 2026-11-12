@@ -152,7 +152,7 @@ public class BedWars extends JavaPlugin {
 
         /* Load version support */
         //noinspection rawtypes
-        Class supp;
+        Class<?> supp;
 
         try {
             supp = Class.forName(ServerVersionResolver.getSupportClassName(version));
@@ -166,7 +166,6 @@ public class BedWars extends JavaPlugin {
         Bukkit.getServicesManager().register(com.andrei1058.bedwars.api.BedWars.class, api, this, ServicePriority.Highest);
 
         try {
-            //noinspection unchecked
             nms = (VersionSupport) supp.getConstructor(Class.forName("org.bukkit.plugin.Plugin"), String.class).newInstance(this, version);
         } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException |
                  ClassNotFoundException | LinkageError e) {
