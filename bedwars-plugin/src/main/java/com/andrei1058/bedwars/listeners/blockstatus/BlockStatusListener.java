@@ -50,6 +50,9 @@ public class BlockStatusListener implements Listener {
      */
     public static void updateBlock(Arena a) {
         if (a == null) return;
+        if (a.getSigns() == null) return;
+        Arena shown = (Arena) Arena.getArenaByName(a.getArenaName());
+        if (shown != null) a = shown;
         for (Block s : a.getSigns()) {
             if (!(s.getState() instanceof Sign)) continue;
             String path = "", data = "";
