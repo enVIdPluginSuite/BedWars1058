@@ -70,7 +70,7 @@ public class SetupArena extends SubCommand {
         //    p.sendMessage("§c▪ §7" + args[0] + " doesn't exist!");
         //    return true;
         //}
-        if (getArenaByName(args[0]) != null && !BedWars.autoscale) {
+        if (getArenaByName(args[0]) != null) {
             p.sendMessage("§c▪ §7Please disable it first!");
             return true;
         }
