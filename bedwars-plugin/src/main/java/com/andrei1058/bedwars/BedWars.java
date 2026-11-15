@@ -285,13 +285,13 @@ public class BedWars extends JavaPlugin {
                 //registerEvents(new ArenaListeners());
                 ArenaSocket.lobbies.addAll(config.getList(ConfigPath.GENERAL_CONFIGURATION_BUNGEE_OPTION_LOBBY_SERVERS));
                 new SendTask();
-                registerEvents(new AutoscaleListener(), new PrePartyListener(), new JoinListenerBungee());
+                registerEvents(new AutoscaleListener(), new PrePartyListener(), new JoinListenerBungee(), new com.andrei1058.bedwars.listeners.arenaselector.SpectateMenuListener());
                 Bukkit.getScheduler().runTaskTimerAsynchronously(this, new LoadedUsersCleaner(), 60L, 60L);
             } else {
                 registerEvents(new ServerPingListener(), new JoinListenerBungeeLegacy());
             }
         } else if (getServerType() == ServerType.MULTIARENA || getServerType() == ServerType.SHARED) {
-            registerEvents(new ArenaSelectorListener(), new BlockStatusListener());
+            registerEvents(new ArenaSelectorListener(), new BlockStatusListener(), new AutoscaleListener(), new com.andrei1058.bedwars.listeners.arenaselector.SpectateMenuListener());
             if (getServerType() == ServerType.MULTIARENA) {
                 registerEvents(new JoinListenerMultiArena());
             } else {
