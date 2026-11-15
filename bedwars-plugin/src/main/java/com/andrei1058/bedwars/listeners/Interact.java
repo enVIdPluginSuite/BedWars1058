@@ -181,7 +181,9 @@ public class Interact implements Listener {
             if (b.getState() instanceof Sign) {
                 for (IArena a1 : Arena.getArenas()) {
                     if (a1.getSigns().contains(b)) {
-                        if (a1.addPlayer(p, false)) {
+                        IArena target = Arena.getArenaByName(a1.getArenaName());
+                        if (target == null) target = a1;
+                        if (target.addPlayer(p, false)) {
                             Sounds.playSound("join-allowed", p);
                         } else {
                             Sounds.playSound("join-denied", p);
