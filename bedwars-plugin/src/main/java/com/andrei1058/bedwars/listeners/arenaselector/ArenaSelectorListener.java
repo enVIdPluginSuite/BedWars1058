@@ -60,8 +60,10 @@ public class ArenaSelectorListener implements Listener {
 
         if (!data.contains(ARENA_SELECTOR_GUI_IDENTIFIER)) return;
 
-        String arenaName = data.split("=")[1];
-        IArena arena = Arena.getArenaByName(arenaName);
+        // the item points to one specific running game (its world), older items used the arena name
+        String key = data.split("=")[1];
+        IArena arena = Arena.getArenaByIdentifier(key);
+        if (arena == null) arena = Arena.getArenaByName(key);
         if (arena == null) return;
         GameState status = arena.getStatus();
 
