@@ -62,17 +62,21 @@ public class DisableArena extends SubCommand {
             p.sendMessage("§c▪ §7" + args[0] + " doesn't exist!");
             return true;
         }
-        IArena a = Arena.getArenaByName(args[0]);
-        if (a == null) {
+        List<IArena> instances = Arena.getArenasByName(args[0]);
+        if (instances.isEmpty()) {
             p.sendMessage("§c▪ §7This arena is disabled yet!");
             return true;
         }
-        if (a.getStatus() == GameState.playing) {
-            p.sendMessage("§6 ▪ §7There is a game running on this Arena, please disable after the game!");
-            return true;
+        for (IArena a : instances) {
+            if (a.getStatus() == GameState.playing) {
+                p.sendMessage("§6 ▪ §7There is a game running on this Arena, please disable after the game!");
+                return true;
+            }
         }
         p.sendMessage("§6 ▪ §7Disabling arena...");
-        a.disable();
+        for (IArena a : instances) {
+            a.disable();
+        }
         return true;
     }
 
@@ -80,7 +84,7 @@ public class DisableArena extends SubCommand {
     public List<String> getTabComplete() {
         List<String> tab = new ArrayList<>();
         for (IArena a : Arena.getArenas()){
-            tab.add(a.getArenaName());
+            if (!tab.contains(a.getArenaName())) tab.add(a.getArenaName());
         }
         return tab;
     }
