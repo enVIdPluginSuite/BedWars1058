@@ -83,15 +83,17 @@ public class PAPISupport extends PlaceholderExpansion {
             int players = 0;
 
             String[] arenas = s.replace("arena_count_", "").split("\\+");
-            IArena a;
             for (String arena : arenas) {
-                a = Arena.getArenaByName(arena);
-                if (a != null) {
+                for (IArena a : Arena.getArenasByName(arena)) {
                     players += a.getPlayers().size();
                 }
             }
 
             return String.valueOf(players);
+        }
+
+        if (s.startsWith("arena_instances_")) {
+            return String.valueOf(Arena.getArenasByName(s.replace("arena_instances_", "")).size());
         }
 
         if (s.startsWith("group_count_")) {
