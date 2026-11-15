@@ -47,6 +47,7 @@ import static com.andrei1058.bedwars.BedWars.plugin;
 @SuppressWarnings("CallToPrintStackTrace")
 public class InternalAdapter extends RestoreAdapter {
 
+    private static final Object ZIP_LOCK = new Object();
     public static File backupFolder = new File(BedWars.plugin.getDataFolder() + "/Cache");
     public InternalAdapter(Plugin plugin) {
         super(plugin);
@@ -64,13 +65,22 @@ public class InternalAdapter extends RestoreAdapter {
             }
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 File bf = new File(backupFolder, a.getArenaName() + ".zip"), af = new File(Bukkit.getWorldContainer(), a.getArenaName());
-                if (bf.exists()) {
-                    FileUtil.delete(af);
+                // an extra game of an arena runs in its own copy of the map
+                boolean instance = !a.getWorldName().equals(a.getArenaName());
+                boolean hadBackup;
+                synchronized (ZIP_LOCK) {
+                    hadBackup = bf.exists();
+                    if (!hadBackup) {
+                        new WorldZipper(a.getArenaName(), true);
+                    }
                 }
 
-                if (!bf.exists()) {
-                    new WorldZipper(a.getArenaName(), true);
-                } else {
+                if (bf.exists() && (hadBackup || instance)) {
+                    if (instance) {
+                        FileUtil.delete(new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                    } else {
+                        FileUtil.delete(af);
+                    }
                     try {
                         ZipFileUtil.unzipFileIntoDirectory(bf, new File(Bukkit.getWorldContainer(), a.getWorldName()));
                     } catch (IOException e) {
@@ -115,7 +125,10 @@ public class InternalAdapter extends RestoreAdapter {
                 }
             } else {
                 Bukkit.unloadWorld(a.getWorldName(), false);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> new Arena(a.getArenaName(), null), 80L);
+                // with multiple instances another game of this arena may already be waiting for players
+                if (Arena.canAutoScale(a.getArenaName())) {
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> new Arena(a.getArenaName(), null), 80L);
+                }
             }
             if (!a.getWorldName().equals(a.getArenaName())) {
                 deleteWorld(a.getWorldName());
@@ -127,9 +140,20 @@ public class InternalAdapter extends RestoreAdapter {
     public void onDisable(IArena a) {
         if(BedWars.isShuttingDown()) {
             Bukkit.unloadWorld(a.getWorldName(), false);
+            if (!a.getWorldName().equals(a.getArenaName())) {
+                try {
+                    FileUtils.deleteDirectory(new File(Bukkit.getWorldContainer(), a.getWorldName()));
+                } catch (IOException ignored) {
+                }
+            }
             return;
         }
-        Bukkit.getScheduler().runTask(getOwner(), () -> Bukkit.unloadWorld(a.getWorldName(), false));
+        Bukkit.getScheduler().runTask(getOwner(), () -> {
+            Bukkit.unloadWorld(a.getWorldName(), false);
+            if (!a.getWorldName().equals(a.getArenaName())) {
+                deleteWorld(a.getWorldName());
+            }
+        });
     }
 
     @Override
