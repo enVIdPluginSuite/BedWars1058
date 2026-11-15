@@ -105,7 +105,7 @@ import static com.andrei1058.bedwars.arena.upgrades.BaseListener.isOnABase;
 @SuppressWarnings("WeakerAccess")
 public class Arena implements IArena {
 
-    private static final HashMap<String, IArena> arenaByName = new HashMap<>();
+    private static final HashMap<String, LinkedList<IArena>> arenaByName = new HashMap<>();
     private static final HashMap<Player, IArena> arenaByPlayer = new HashMap<>();
     private static final HashMap<String, IArena> arenaByIdentifier = new HashMap<>();
     private static final LinkedList<IArena> arenas = new LinkedList<>();
@@ -188,7 +188,7 @@ public class Arena implements IArena {
      * @param p    - This will send messages to the player if something went wrong while loading the arena. Can be NULL.
      */
     public Arena(String name, Player p) {
-        if (!autoscale) {
+        if (!Instances.enabled()) {
             for (IArena mm : enableQueue) {
                 if (mm.getArenaName().equalsIgnoreCase(name)) {
                     plugin.getLogger().severe("Tried to load arena " + name + " but it is already in the enable queue.");
@@ -205,11 +205,7 @@ public class Arena implements IArena {
             }
         }
         this.arenaName = name;
-        if (autoscale) {
-            this.worldName = BedWars.arenaManager.generateGameID();
-        } else {
-            this.worldName = arenaName;
-        }
+        this.worldName = Instances.pickWorldName(arenaName);
 
         cm = new ArenaConfig(BedWars.plugin, name, plugin.getDataFolder().getPath() + "/Arenas");
 
@@ -287,9 +283,8 @@ public class Arena implements IArena {
      */
     @Override
     public void init(World world) {
-        if (!autoscale) {
-            if (getArenaByName(arenaName) != null) return;
-        }
+        if (arenas.contains(this)) return;
+        if (!Instances.enabled() && getArenaByName(arenaName) != null) return;
         removeFromEnableQueue(this);
         debug("Initialized arena " + getArenaName() + " with map " + world.getName());
         this.world = world;
@@ -339,7 +334,7 @@ public class Arena implements IArena {
         }
 
         arenas.add(this);
-        arenaByName.put(getArenaName(), this);
+        arenaByName.computeIfAbsent(getArenaName(), k -> new LinkedList<>()).add(this);
         arenaByIdentifier.put(worldName, this);
         world.getWorldBorder().setCenter(cm.getArenaLoc("waiting.Loc"));
         world.getWorldBorder().setSize(yml.getInt("worldBorder"));
@@ -1246,7 +1241,17 @@ public class Arena implements IArena {
      * @param arenaName arena name
      */
     public static IArena getArenaByName(String arenaName) {
-        return arenaByName.get(arenaName);
+        return Instances.best(getArenasByName(arenaName));
+    }
+
+    /**
+     * Get every running instance of an arena (oldest first).
+     *
+     * @param arenaName arena name
+     */
+    public static List<IArena> getArenasByName(String arenaName) {
+        LinkedList<IArena> l = arenaByName.get(arenaName);
+        return l == null ? new ArrayList<>() : new ArrayList<>(l);
     }
 
     /**
@@ -1456,11 +1461,28 @@ public class Arena implements IArena {
     }
 
     public static void setArenaByName(IArena arena) {
-        arenaByName.put(arena.getArenaName(), arena);
+        LinkedList<IArena> l = arenaByName.computeIfAbsent(arena.getArenaName(), k -> new LinkedList<>());
+        if (!l.contains(arena)) l.add(arena);
     }
 
+    /**
+     * Removes the inactive instances registered under the given arena name (all of them if every one is active).
+     */
     public static void removeArenaByName(@NotNull String arena) {
-        arenaByName.remove(arena.replace("_clone", ""));
+        String key = arena.replace("_clone", "");
+        LinkedList<IArena> l = arenaByName.get(key);
+        if (l == null) return;
+        // drop the entries that are no longer active arenas (e.g. a parked arena unlisted by a map loader);
+        // when every entry is active nothing is left to tell them apart, so the whole name is removed
+        boolean removed = l.removeIf(x -> !arenas.contains(x));
+        if (!removed || l.isEmpty()) arenaByName.remove(key);
+    }
+
+    private static void unregisterInstance(Arena arena) {
+        LinkedList<IArena> l = arenaByName.get(arena.getArenaName());
+        if (l == null) return;
+        l.remove(arena);
+        if (l.isEmpty()) arenaByName.remove(arena.getArenaName());
     }
 
     public static void removeArenaByPlayer(Player p, @NotNull IArena arena) {
@@ -1628,6 +1650,13 @@ public class Arena implements IArena {
      * Refresh signs.
      */
     public synchronized void refreshSigns() {
+        if (arenaName != null && signs != null) {
+            IArena shown = getArenaByName(arenaName);
+            if (shown != null && shown != this) {
+                shown.refreshSigns();
+                return;
+            }
+        }
         for (Block b : getSigns()) {
             if (b == null) continue;
             if (!(b.getType().toString().endsWith("_SIGN") || b.getType().toString().endsWith("_WALL_SIGN"))) continue;
@@ -2406,7 +2435,7 @@ public class Arena implements IArena {
                 despawnable.destroy();
             }
         }
-        arenaByName.remove(arenaName);
+        unregisterInstance(this);
         arenaByPlayer.entrySet().removeIf(entry -> entry.getValue() == this);
         players = null;
         spectators = null;
@@ -2547,34 +2576,26 @@ public class Arena implements IArena {
         return respawnSessions.containsKey(player);
     }
 
-    // used for auto scale conditions
+    // used for auto scale / multi instance conditions
     public static boolean canAutoScale(String arenaName) {
-        if (!autoscale) return true;
-
-        if (Arena.getArenas().isEmpty()) return true;
+        if (!Instances.enabled()) return true;
 
         for (IArena ar : Arena.getEnableQueue()) {
             if (ar.getArenaName().equalsIgnoreCase(arenaName)) return false;
         }
 
-        if (Arena.getGamesBeforeRestart() != -1 && Arena.getArenas().size() >= Arena.getGamesBeforeRestart())
+        if (autoscale && Arena.getGamesBeforeRestart() != -1 && Arena.getArenas().size() >= Arena.getGamesBeforeRestart())
             return false;
 
         int activeClones = 0;
-        for (IArena ar : Arena.getArenas()) {
-            if (ar.getArenaName().equalsIgnoreCase(arenaName)) {
-                // clone this arena only if there aren't available arena of the same kind
-                GameState status = ar.getStatus();
-                if (status == GameState.waiting || status == GameState.starting) return false;
-            }
-            // count active clones
-            if (ar.getArenaName().equals(arenaName)) {
-                activeClones++;
-            }
+        for (IArena ar : Arena.getArenasByName(arenaName)) {
+            // clone this arena only if there aren't available arena of the same kind
+            if (Instances.isJoinable(ar)) return false;
+            activeClones++;
         }
 
-        // check amount of active clones
-        return config.getInt(ConfigPath.GENERAL_CONFIGURATION_AUTO_SCALE_LIMIT) > activeClones;
+        // check amount of active instances
+        return Instances.limit() > activeClones;
     }
 
     @Override
